@@ -1,0 +1,129 @@
+name: Project Auto-Start → Ready
+
+on:
+  schedule:
+    # Corre todos los días a las 06:00 UTC (≈ 02:00 en Chile de invierno).
+    # Ajusta el cron si quieres otra hora.
+    - cron: '0 6 * * *'
+  workflow_dispatch: {}  # Permite ejecutarlo manualmente
+
+permissions:
+  contents: read
+
+env:
+  # Ya las tienes cargadas como Variables en el repo privado
+  PROJECT_ID: ${{ vars.PUBLIC_PROJECT_ID }}
+  STATUS_FIELD_ID: ${{ vars.PUBLIC_STATUS_FIELD_ID }}
+  STARTDATE_FIELD_ID: ${{ vars.PUBLIC_STARTDATE_FIELD_ID }}
+
+jobs:
+  autostart:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move items (Start date <= today && Status=Backlog) → Ready
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECTS_TOKEN }}
+          script: |
+            // --- utilidades ---
+            function isoTodayUTC() {
+              const d = new Date();
+              return d.toISOString().slice(0,10); // YYYY-MM-DD en UTC
+            }
+            const TODAY = isoTodayUTC();
+
+            const projectId = process.env.PROJECT_ID;
+            const statusFieldId = process.env.STATUS_FIELD_ID;
+            const startDateFieldId = process.env.STARTDATE_FIELD_ID;
+
+            // 1) Paginamos todos los items del Project v2
+            const q = `
+              query($project:ID!, $after:String) {
+                node(id:$project) {
+                  ... on ProjectV2 {
+                    items(first:100, after:$after) {
+                      nodes {
+                        id
+                        content {
+                          __typename
+                          ... on Issue {
+                            number
+                            title
+                            repository { name owner { login } }
+                          }
+                          ... on PullRequest {
+                            number
+                            title
+                            repository { name owner { login } }
+                          }
+                        }
+                        fieldValues(first:50) {
+                          nodes {
+                            __typename
+                            ... on ProjectV2ItemFieldDateValue {
+                              date
+                              field { ... on ProjectV2FieldCommon { id name } }
+                            }
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
+                              field { ... on ProjectV2FieldCommon { id name } }
+                            }
+                          }
+                        }
+                      }
+                      pageInfo { hasNextPage endCursor }
+                    }
+                  }
+                }
+              }`;
+
+            // 2) Mutación para actualizar Status (single select)
+            const mSetSelect = `
+              mutation($project:ID!, $item:ID!, $field:ID!, $name:String!) {
+                updateProjectV2ItemFieldValue(input:{
+                  projectId:$project, itemId:$item,
+                  fieldId:$field, value:{ singleSelectOptionName:$name }
+                }) { projectV2Item { id } }
+              }`;
+
+            // 3) Recorremos items y aplicamos regla: Start date <= TODAY && Status == Backlog
+            let after = null;
+            let moved = 0, scanned = 0;
+
+            do {
+              const page = await github.graphql(q, { project: projectId, after });
+              const items = page.node.items.nodes;
+
+              for (const it of items) {
+                scanned++;
+                // leer valores de campos
+                let startDate = null;
+                let status = null;
+
+                for (const fv of it.fieldValues.nodes) {
+                  if (fv.__typename === 'ProjectV2ItemFieldDateValue' && fv.field?.id === startDateFieldId) {
+                    startDate = fv.date; // YYYY-MM-DD
+                  }
+                  if (fv.__typename === 'ProjectV2ItemFieldSingleSelectValue' && fv.field?.id === statusFieldId) {
+                    status = fv.name; // p.ej. "Backlog" | "Ready" | ...
+                  }
+                }
+
+                // Condición: startDate definido y <= hoy, y status exactamente "Backlog"
+                if (startDate && startDate <= TODAY && status === 'Backlog') {
+                  // Actualizar a "Ready"
+                  await github.graphql(mSetSelect, {
+                    project: projectId,
+                    item: it.id,
+                    field: statusFieldId,
+                    name: 'Ready'
+                  });
+                  moved++;
+                }
+              }
+
+              const pi = page.node.items.pageInfo;
+              after = pi.hasNextPage ? pi.endCursor : null;
+            } while (after);
+
+            core.info(`Escaneados: ${scanned} | Movidos a Ready: ${moved}`);
