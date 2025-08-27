@@ -177,7 +177,7 @@ jobs:
 
   # ----------------- SINCRONIZA COMENTARIOS (privado -> público) -----------------
   mirror_comment:
-    if: ${{ github.event_name == 'issue_comment' && env.COPY_COMMENTS == 'true' }}
+    if: ${{ github.event_name == 'issue_comment' && ${{ env.COPY_COMMENTS }} == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check label gate for comments (private)
