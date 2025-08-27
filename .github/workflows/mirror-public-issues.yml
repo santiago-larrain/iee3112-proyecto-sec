@@ -17,11 +17,12 @@ env:
   COPY_COMMENTS: true
 
 jobs:
+  # -------------------- SYNC DE ISSUES (título/cuerpo/estado) --------------------
   mirror_issue:
     if: ${{ github.event_name == 'issues' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check label gate (private)
+      - name: Gate: issue tiene la etiqueta requerida (privado)
         id: gate
         uses: actions/github-script@v7
         with:
@@ -34,7 +35,7 @@ jobs:
         if: ${{ steps.gate.outputs.allowed != 'true' }}
         run: echo "Issue without '${{ env.MIRROR_LABEL }}' label. Skipping."
 
-      - name: Preflight public repo access (uses MIRROR_TOKEN)
+      - name: Preflight public repo access (usa MIRROR_TOKEN)
         if: ${{ steps.gate.outputs.allowed == 'true' }}
         uses: actions/github-script@v7
         with:
@@ -43,7 +44,7 @@ jobs:
             const { data } = await github.rest.repos.get({ owner: process.env.PUBLIC_OWNER, repo: process.env.PUBLIC_REPO });
             if (!data.has_issues) core.setFailed('Issues are disabled in target public repo.');
 
-      - name: Build payload & find mapping (private)
+      - name: Build payload & find mapping (privado)
         id: prep
         if: ${{ steps.gate.outputs.allowed == 'true' }}
         uses: actions/github-script@v7
@@ -65,7 +66,7 @@ jobs:
             const bodySafe = sanitize(src.body || '');
             const mirroredBody = `${header}\n\n${bodySafe}\n\n<!-- MIRROR-SOURCE:${context.repo.owner}/${context.repo.repo}#${num} -->`;
 
-            // Buscar mapping en los comentarios de la issue PRIVADA
+            // Buscar mapping (comentario con marcador) en la PRIVADA
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -84,7 +85,7 @@ jobs:
             core.setOutput('src_number', String(num));
             core.setOutput('pub_number', pubNumber);
 
-      - name: Create public issue (first time)  # uses MIRROR_TOKEN
+      - name: Create public issue (first time)  # usa MIRROR_TOKEN
         id: create_public
         if: ${{ steps.prep.outputs.pub_number == '' }}
         uses: actions/github-script@v7
@@ -103,7 +104,7 @@ jobs:
             });
             core.setOutput('pub_number', String(created.number));
 
-      - name: Write mapping marker in private issue  # uses GITHUB_TOKEN
+      - name: Write mapping marker in private issue  # usa GITHUB_TOKEN
         if: ${{ steps.prep.outputs.pub_number == '' && steps.create_public.outputs.pub_number != '' }}
         uses: actions/github-script@v7
         env:
@@ -128,7 +129,7 @@ jobs:
         env:
           PUB_NUM: ${{ steps.prep.outputs.pub_number != '' && steps.prep.outputs.pub_number || steps.create_public.outputs.pub_number }}
 
-      - name: Sync title/body to public  # uses MIRROR_TOKEN
+      - name: Sync title/body to public  # usa MIRROR_TOKEN
         if: ${{ env.PUB_NUM != '' }}
         uses: actions/github-script@v7
         env:
@@ -146,7 +147,7 @@ jobs:
               body:  process.env.BODY
             });
 
-      - name: Sync state (open/closed) to public  # uses MIRROR_TOKEN
+      - name: Sync state (open/closed) to public  # usa MIRROR_TOKEN
         if: ${{ env.PUB_NUM != '' && (github.event.action == 'closed' || github.event.action == 'reopened') }}
         uses: actions/github-script@v7
         env:
@@ -161,11 +162,20 @@ jobs:
               state: (context.payload.action === 'closed') ? 'closed' : 'open'
             });
 
+  # -------------------- SYNC DE COMENTARIOS (privado -> público) --------------------
   mirror_comment:
-    if: ${{ github.event_name == 'issue_comment' && env.COPY_COMMENTS == 'true' }}
+    if: ${{ github.event_name == 'issue_comment' }}  # <- sin 'env' aquí
     runs-on: ubuntu-latest
     steps:
-      - name: Check label gate for comments (private)
+      - name: Skip whole job if COPY_COMMENTS is false
+        id: copygate
+        run: |
+          if [ "${COPY_COMMENTS}" != "true" ]; then
+            echo "COPY_COMMENTS is false; exiting."
+            exit 78
+          fi
+
+      - name: Gate: issue tiene la etiqueta requerida (privado)
         id: gatec
         uses: actions/github-script@v7
         with:
@@ -204,7 +214,7 @@ jobs:
         if: ${{ steps.findmapc.outputs.pub_number == '' }}
         run: echo "No mapping. Skipping."
 
-      - name: Mirror new comment to public  # uses MIRROR_TOKEN
+      - name: Mirror new comment to public  # usa MIRROR_TOKEN
         if: ${{ steps.findmapc.outputs.pub_number != '' && github.event.comment.user.type != 'Bot' }}
         uses: actions/github-script@v7
         env:
