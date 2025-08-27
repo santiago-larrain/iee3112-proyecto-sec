@@ -11,46 +11,41 @@ permissions:
   issues: read
 
 env:
-  PUBLIC_OWNER: santiago-larrain        # <-- dueño del repo público
-  PUBLIC_REPO:  public-iee3112-proyecto-sec   # <-- nombre del repo público
+  PUBLIC_OWNER: santiago-larrain
+  PUBLIC_REPO:  public-iee3112-proyecto-sec
   MIRROR_LABEL: public
   COPY_COMMENTS: true
 
 jobs:
   mirror:
-    if: ${{ github.event_name == 'issues' || github.event_name == 'issue_comment' }}
+    if: ${{ github.event_name == 'issues' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check label gate (solo corre si la issue tiene la etiqueta)
-        id: checklabel
+      # 1) Gate por etiqueta (privado) – usa GITHUB_TOKEN
+      - name: Check label gate (only if issue has MIRROR_LABEL)
+        id: gate
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            if (context.payload.issue) {
-              const labels = context.payload.issue.labels.map(l => typeof l === 'string' ? l : l.name);
-              const has = labels.includes(process.env.MIRROR_LABEL);
-              core.setOutput('allowed', String(has));
-            } else {
-              core.setOutput('allowed', 'false');
-            }
+            const labels = (context.payload.issue?.labels || []).map(l => typeof l === 'string' ? l : l.name);
+            core.setOutput('allowed', String(labels.includes(process.env.MIRROR_LABEL)));
 
       - name: Stop if not labeled for mirroring
-        if: steps.checklabel.outputs.allowed != 'true'
-        run: echo "Issue not labeled for mirroring. Skipping."
+        if: steps.gate.outputs.allowed != 'true'
+        run: echo "Issue not labeled '${{ env.MIRROR_LABEL }}'. Skipping."
 
-      - name: Mirror/Sync to public
-        if: steps.checklabel.outputs.allowed == 'true'
+      # 2) Preparar cuerpo y buscar mapping en comentarios PRIVADOS – usa GITHUB_TOKEN
+      - name: Build payload & find mapping (private repo)
+        id: build
+        if: steps.gate.outputs.allowed == 'true'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.MIRROR_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const pubOwner = process.env.PUBLIC_OWNER;
-            const pubRepo  = process.env.PUBLIC_REPO;
-            const srcIssue = context.payload.issue;
-            const srcNumber = srcIssue.number;
+            const src = context.payload.issue;
+            const num = src.number;
 
-            // Saneamos el contenido para no filtrar secretos
             function sanitize(text) {
               if (!text) return '';
               let t = text;
@@ -59,107 +54,156 @@ jobs:
               return t.trim();
             }
 
-            const header = `> 🔗 Source: ${context.repo.owner}/${context.repo.repo}#${srcNumber}`;
-            const bodySafe = sanitize(srcIssue.body || '');
-            const mirroredBody = `${header}\n\n${bodySafe}\n\n<!-- MIRROR-SOURCE:${context.repo.owner}/${context.repo.repo}#${srcNumber} -->`;
+            const header = `> 🔗 Source: ${context.repo.owner}/${context.repo.repo}#${num}`;
+            const bodySafe = sanitize(src.body || '');
+            const mirroredBody = `${header}\n\n${bodySafe}\n\n<!-- MIRROR-SOURCE:${context.repo.owner}/${context.repo.repo}#${num} -->`;
 
-            // Buscamos si ya existe una issue pública vinculada
-            async function findMappingInPrivateComment() {
-              const { data: comments } = await github.rest.issues.listComments({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: srcNumber,
-                per_page: 100
+            // Busca marker de mapeo en comentarios PRIVADOS
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: num,
+              per_page: 100
+            });
+            const marker = /<!--\s*MIRROR-TARGET:\s*([^\s#\/]+)\/([^\s#]+)#(\d+)\s*-->/;
+            let pubNumber = '';
+            for (const c of comments) {
+              const m = c.body && c.body.match(marker);
+              if (m) { pubNumber = String(Number(m[3])); break; }
+            }
+
+            core.setOutput('title', src.title);
+            core.setOutput('body',  mirroredBody);
+            core.setOutput('src_number', String(num));
+            core.setOutput('pub_number', pubNumber);
+
+      # 3) Si no existe mapping, crear issue PÚBLICA – usa MIRROR_TOKEN
+      - name: Create public issue (first time)
+        id: create_public
+        if: steps.gate.outputs.allowed == 'true' && steps.build.outputs.pub_number == ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.MIRROR_TOKEN }}
+          script: |
+            const { title, body } = core.getInput;
+          # github-script no expone core.getInput aquí; leemos desde env/outputs:
+            const title = process.env.TITLE || `${{ steps.build.outputs.title }}`;
+            const body  = process.env.BODY  || `${{ steps.build.outputs.body }}`;
+            const { data: created } = await github.rest.issues.create({
+              owner: process.env.PUBLIC_OWNER,
+              repo:  process.env.PUBLIC_REPO,
+              title,
+              body,
+              labels: ['from-private']
+            });
+            core.setOutput('pub_number', String(created.number));
+        env:
+          TITLE: ${{ steps.build.outputs.title }}
+          BODY:  ${{ steps.build.outputs.body }}
+
+      # 4) Escribir marker de mapeo en PRIVADO – usa GITHUB_TOKEN
+      - name: Write mapping marker in private issue
+        if: steps.gate.outputs.allowed == 'true' && steps.build.outputs.pub_number == '' && steps.create_public.outputs.pub_number != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const srcNum = Number(`${{ steps.build.outputs.src_number }}`);
+            const pubNum = Number(`${{ steps.create_public.outputs.pub_number }}`);
+            const marker = `<!-- MIRROR-TARGET:${process.env.PUBLIC_OWNER}/${process.env.PUBLIC_REPO}#${pubNum} -->`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: srcNum,
+              body: `Mirrored to ${process.env.PUBLIC_OWNER}/${process.env.PUBLIC_REPO}#${pubNum}\n\n${marker}`
+            });
+
+      # 5) Determinar número público final (creado o existente)
+      - name: Set public number
+        id: pick_pub
+        run: |
+          echo "PUB_NUM=${PUB_NUM}" >> $GITHUB_ENV
+        env:
+          PUB_NUM: ${{ steps.build.outputs.pub_number != '' && steps.build.outputs.pub_number || steps.create_public.outputs.pub_number }}
+
+      # 6) Sincronizar título/cuerpo o estado – usa MIRROR_TOKEN
+      - name: Sync title/body
+        if: steps.gate.outputs.allowed == 'true' && env.PUB_NUM != ''
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.MIRROR_TOKEN }}
+          script: |
+            const pubNumber = Number(process.env.PUB_NUM);
+            const title = `${{ steps.build.outputs.title }}`;
+            const body  = `${{ steps.build.outputs.body }}`;
+            const action = context.payload.action;
+
+            if (['opened','edited','labeled','unlabeled'].includes(action)) {
+              await github.rest.issues.update({
+                owner: process.env.PUBLIC_OWNER,
+                repo:  process.env.PUBLIC_REPO,
+                issue_number: pubNumber,
+                title, body
               });
-              const marker = /<!--\s*MIRROR-TARGET:\s*([^\s#\/]+)\/([^\s#]+)#(\d+)\s*-->/;
-              for (const c of comments) {
-                const m = c.body && c.body.match(marker);
-                if (m) return { owner: m[1], repo: m[2], number: Number(m[3]) };
-              }
-              return null;
             }
-
-            async function writeMappingComment(targetNumber) {
-              const marker = `<!-- MIRROR-TARGET:${pubOwner}/${pubRepo}#${targetNumber} -->`;
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: srcNumber,
-                body: `Mirrored to ${pubOwner}/${pubRepo}#${targetNumber}\n\n${marker}`
+            if (action === 'closed') {
+              await github.rest.issues.update({
+                owner: process.env.PUBLIC_OWNER,
+                repo:  process.env.PUBLIC_REPO,
+                issue_number: pubNumber,
+                state: 'closed'
+              });
+            }
+            if (action === 'reopened') {
+              await github.rest.issues.update({
+                owner: process.env.PUBLIC_OWNER,
+                repo:  process.env.PUBLIC_REPO,
+                issue_number: pubNumber,
+                state: 'open'
               });
             }
 
-            let mapping = await findMappingInPrivateComment();
-
-            // --- Manejo de eventos sobre la issue ---
-            if (context.eventName === 'issues') {
-              const action = context.payload.action;
-
-              if (!mapping) {
-                // Crear issue pública nueva
-                const { data: created } = await github.rest.issues.create({
-                  owner: pubOwner,
-                  repo: pubRepo,
-                  title: srcIssue.title,
-                  body: mirroredBody,
-                  labels: ['from-private']
-                });
-                await writeMappingComment(created.number);
-                mapping = { owner: pubOwner, repo: pubRepo, number: created.number };
-              }
-
-              // Sincronizar cambios
-              if (['opened','edited','labeled','unlabeled'].includes(action)) {
-                await github.rest.issues.update({
-                  owner: mapping.owner,
-                  repo: mapping.repo,
-                  issue_number: mapping.number,
-                  title: srcIssue.title,
-                  body: mirroredBody
-                });
-              }
-              if (action === 'closed') {
-                await github.rest.issues.update({
-                  owner: mapping.owner,
-                  repo: mapping.repo,
-                  issue_number: mapping.number,
-                  state: 'closed'
-                });
-              }
-              if (action === 'reopened') {
-                await github.rest.issues.update({
-                  owner: mapping.owner,
-                  repo: mapping.repo,
-                  issue_number: mapping.number,
-                  state: 'open'
-                });
-              }
+  mirror_comments:
+    if: ${{ github.event_name == 'issue_comment' && env.COPY_COMMENTS == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      # A) Buscar mapping en PRIVADO – usa GITHUB_TOKEN
+      - name: Find mapping for comment
+        id: find_map
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const num = context.payload.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: num, per_page: 100
+            });
+            const marker = /<!--\s*MIRROR-TARGET:\s*([^\s#\/]+)\/([^\s#]+)#(\d+)\s*-->/;
+            let pubNumber = '';
+            for (const c of comments) {
+              const m = c.body && c.body.match(marker);
+              if (m) { pubNumber = String(Number(m[3])); break; }
             }
+            core.setOutput('pub_number', pubNumber);
 
-            // --- Manejo de comentarios ---
-            if (context.eventName === 'issue_comment' && (process.env.COPY_COMMENTS || 'true').toLowerCase() === 'true') {
-              const comment = context.payload.comment;
-              if (comment.user && comment.user.type === 'Bot') return; // evitar loop
+      - name: Skip if no mapping
+        if: steps.find_map.outputs.pub_number == ''
+        run: echo "No mapping. Skipping."
 
-              if (!mapping) {
-                const { data: created } = await github.rest.issues.create({
-                  owner: pubOwner,
-                  repo: pubRepo,
-                  title: srcIssue.title,
-                  body: mirroredBody,
-                  labels: ['from-private']
-                });
-                await writeMappingComment(created.number);
-                mapping = { owner: pubOwner, repo: pubRepo, number: created.number };
-              }
-
-              const safeComment = sanitize(comment.body || '');
-              if (safeComment) {
-                await github.rest.issues.createComment({
-                  owner: mapping.owner,
-                  repo: mapping.repo,
-                  issue_number: mapping.number,
-                  body: safeComment
-                });
-              }
-            }
+      # B) Copiar comentario al PÚBLICO – usa MIRROR_TOKEN
+      - name: Mirror comment to public
+        if: steps.find_map.outputs.pub_number != '' && (github.event.comment.user.type != 'Bot')
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.MIRROR_TOKEN }}
+          script: |
+            function sanitize(t){ if(!t) return ''; return t.split('\n').filter(l=>!/(token|secret|password|apikey|PRIVATE KEY|authorization|bearer)/i.test(l)).join('\n').trim(); }
+            const pubNumber = Number(`${{ steps.find_map.outputs.pub_number }}`);
+            const safe = sanitize(context.payload.comment.body || '');
+            if (!safe) return;
+            await github.rest.issues.createComment({
+              owner: process.env.PUBLIC_OWNER,
+              repo:  process.env.PUBLIC_REPO,
+              issue_number: pubNumber,
+              body: safe
+            });
