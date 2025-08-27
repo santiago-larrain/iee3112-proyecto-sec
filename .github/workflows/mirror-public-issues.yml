@@ -25,7 +25,7 @@ jobs:
         id: checklabel
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.MIRROR_TOKEN }}
           script: |
             if (context.payload.issue) {
               const labels = context.payload.issue.labels.map(l => typeof l === 'string' ? l : l.name);
