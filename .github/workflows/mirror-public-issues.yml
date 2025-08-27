@@ -11,7 +11,7 @@ permissions:
   issues: read
 
 env:
-  PUBLIC_OWNER:  Grupo-3-SEC
+  PUBLIC_OWNER:  santiago-larrain
   PUBLIC_REPO:   public-iee3112-proyecto-sec
   MIRROR_LABEL:  public
   COPY_COMMENTS: true
