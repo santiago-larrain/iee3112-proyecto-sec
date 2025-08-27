@@ -161,6 +161,220 @@ jobs:
               issue_number: Number(process.env.PUB_NUM),
               state: (context.payload.action === 'closed') ? 'closed' : 'open'
             });
+            
+      # === Añadir la issue pública al Project v2 ===
+      - name: Add issue to Project v2 (public)
+        id: add_to_project
+        uses: actions/github-script@v7
+        env:
+          PROJECT_ID: ${{ vars.PUBLIC_PROJECT_ID }}
+        with:
+          github-token: ${{ secrets.PROJECTS_TOKEN }}   # PAT clásico con scope project
+          script: |
+            // 1) Obtener node_id de la issue pública
+            const { data: pub } = await github.rest.issues.get({
+              owner: process.env.PUBLIC_OWNER,
+              repo:  process.env.PUBLIC_REPO,
+              issue_number: Number(process.env.PUB_NUM)
+            });
+            const issueNodeId = pub.node_id;
+
+            // 2) Añadir al Project v2
+            const mutation = `
+              mutation($project:ID!, $content:ID!) {
+                addProjectV2ItemById(input:{projectId:$project, contentId:$content}) {
+                  item { id }
+                }
+              }`;
+            const r = await github.graphql(mutation, {
+              project: process.env.PROJECT_ID,
+              content: issueNodeId
+            });
+            core.setOutput('item_id', r.addProjectV2ItemById.item.id);
+
+      # === Copiar labels del PRIVADO al PÚBLICO (merge seguro) ===
+      - name: Mirror labels to public
+        if: ${{ env.PUB_NUM != '' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.MIRROR_TOKEN }}
+          script: |
+            const srcLabels = (context.payload.issue.labels || []).map(l => typeof l === 'string' ? l : l.name);
+            const { data: pubIssue } = await github.rest.issues.get({
+              owner: process.env.PUBLIC_OWNER,
+              repo:  process.env.PUBLIC_REPO,
+              issue_number: Number(process.env.PUB_NUM)
+            });
+            const current = pubIssue.labels.map(l => typeof l === 'string' ? l : l.name);
+            const next = [...new Set([...current, ...srcLabels])];
+            await github.rest.issues.setLabels({
+              owner: process.env.PUBLIC_OWNER,
+              repo:  process.env.PUBLIC_REPO,
+              issue_number: Number(process.env.PUB_NUM),
+              labels: next
+            });
+
+      # === Copiar assignees (solo si tienen acceso al repo público) ===
+      - name: Mirror assignees to public (best-effort)
+        if: ${{ env.PUB_NUM != '' }}
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.MIRROR_TOKEN }}
+          script: |
+            const assignees = (context.payload.issue.assignees || []).map(a => a.login);
+            if (!assignees.length) return;
+
+            const ok = [];
+            for (const u of assignees) {
+              try {
+                await github.rest.repos.checkCollaborator({
+                  owner: process.env.PUBLIC_OWNER,
+                  repo:  process.env.PUBLIC_REPO,
+                  username: u
+                });
+                ok.push(u);
+              } catch { /* no es colaborador: se omite */ }
+            }
+            if (!ok.length) return;
+            await github.rest.issues.addAssignees({
+              owner: process.env.PUBLIC_OWNER,
+              repo:  process.env.PUBLIC_REPO,
+              issue_number: Number(process.env.PUB_NUM),
+              assignees: ok
+            });
+
+      # === Escribir campos del Project (Status/Priority/Size/Estimate/Fechas) ===
+      - name: Update Project fields (status/priority/size/estimate/dates)
+        if: ${{ steps.add_to_project.outputs.item_id != '' }}
+        uses: actions/github-script@v7
+        env:
+          ITEM_ID:             ${{ steps.add_to_project.outputs.item_id }}
+          STATUS_FIELD_ID:     ${{ vars.PUBLIC_STATUS_FIELD_ID }}
+          PRIORITY_FIELD_ID:   ${{ vars.PUBLIC_PRIORITY_FIELD_ID }}
+          SIZE_FIELD_ID:       ${{ vars.PUBLIC_SIZE_FIELD_ID }}
+          ESTIMATE_FIELD_ID:   ${{ vars.PUBLIC_ESTIMATE_FIELD_ID }}
+          STARTDATE_FIELD_ID:  ${{ vars.PUBLIC_STARTDATE_FIELD_ID }}
+          ENDDATE_FIELD_ID:    ${{ vars.PUBLIC_ENDDATE_FIELD_ID }}
+        with:
+          github-token: ${{ secrets.PROJECTS_TOKEN }}   # PAT clásico
+          script: |
+            // ====== 1) Derivar valores desde la issue PRIVADA ======
+            const src = context.payload.issue;
+            const labels = (src.labels || []).map(l => typeof l === 'string' ? l : l.name);
+
+            // Status (usa tus opciones del Project: Backlog, Ready, In progress, In review, Done)
+            let status = 'Backlog';
+            if (labels.includes('Ready')) status = 'Ready';
+            if (labels.includes('In progress') || labels.some(n=>/^status\/in-?progress$/i.test(n))) status = 'In progress';
+            if (labels.includes('In review')) status = 'In review';
+            if (src.state === 'closed' || labels.includes('Done')) status = 'Done';
+
+            // Priority (opciones: P0, Hito 1, Hito 2)
+            let priority = null;
+            if (labels.includes('P0')) priority = 'P0';
+            else if (labels.includes('Hito 1')) priority = 'Hito 1';
+            else if (labels.includes('Hito 2')) priority = 'Hito 2';
+
+            // Size (XS/S/M/L/XL). Busca en labels o "size: M" en el cuerpo
+            let size = labels.find(l => /^(XS|S|M|L|XL)$/i.test(l)) || null;
+            if (!size) {
+              const m = /size\s*:\s*(XS|S|M|L|XL)/i.exec(src.body || '');
+              if (m) size = m[1].toUpperCase();
+            }
+
+            // Estimate (número en el body: "estimate: 5")
+            let estimate = null;
+            {
+              const m = /estimate\s*:\s*([0-9]+(\.[0-9]+)?)/i.exec(src.body || '');
+              if (m) estimate = parseFloat(m[1]);
+            }
+
+            // Fechas en el body: "start date: YYYY-MM-DD", "end date: YYYY-MM-DD"
+            function pickDate(re) {
+              const m = re.exec(src.body || '');
+              return m ? m[1] : null;
+            }
+            const startDate = pickDate(/start\s*date\s*:\s*(\d{4}-\d{2}-\d{2})/i);
+            const endDate   = pickDate(/end\s*date\s*:\s*(\d{4}-\d{2}-\d{2})/i);
+
+            // ====== 2) Mutaciones Project v2 ======
+            const setSelect = `
+              mutation($project:ID!, $item:ID!, $field:ID!, $name:String!) {
+                updateProjectV2ItemFieldValue(input:{
+                  projectId:$project, itemId:$item,
+                  fieldId:$field, value:{ singleSelectOptionName:$name }
+                }) { projectV2Item { id } }
+              }`;
+            const setNumber = `
+              mutation($project:ID!, $item:ID!, $field:ID!, $val:Float!) {
+                updateProjectV2ItemFieldValue(input:{
+                  projectId:$project, itemId:$item,
+                  fieldId:$field, value:{ number:$val }
+                }) { projectV2Item { id } }
+              }`;
+            const setDate = `
+              mutation($project:ID!, $item:ID!, $field:ID!, $val:Date!) {
+                updateProjectV2ItemFieldValue(input:{
+                  projectId:$project, itemId:$item,
+                  fieldId:$field, value:{ date:$val }
+                }) { projectV2Item { id } }
+              }`;
+
+            // Status (siempre)
+            await github.graphql(setSelect, {
+              project: process.env.PUBLIC_PROJECT_ID,
+              item:    process.env.ITEM_ID,
+              field:   process.env.STATUS_FIELD_ID,
+              name:    status
+            });
+
+            // Priority
+            if (priority) {
+              await github.graphql(setSelect, {
+                project: process.env.PUBLIC_PROJECT_ID,
+                item:    process.env.ITEM_ID,
+                field:   process.env.PRIORITY_FIELD_ID,
+                name:    priority
+              });
+            }
+
+            // Size
+            if (size) {
+              await github.graphql(setSelect, {
+                project: process.env.PUBLIC_PROJECT_ID,
+                item:    process.env.ITEM_ID,
+                field:   process.env.SIZE_FIELD_ID,
+                name:    size.toUpperCase()
+              });
+            }
+
+            // Estimate
+            if (estimate !== null) {
+              await github.graphql(setNumber, {
+                project: process.env.PUBLIC_PROJECT_ID,
+                item:    process.env.ITEM_ID,
+                field:   process.env.ESTIMATE_FIELD_ID,
+                val:     estimate
+              });
+            }
+
+            // Fechas
+            if (startDate) {
+              await github.graphql(setDate, {
+                project: process.env.PUBLIC_PROJECT_ID,
+                item:    process.env.ITEM_ID,
+                field:   process.env.STARTDATE_FIELD_ID,
+                val:     startDate
+              });
+            }
+            if (endDate) {
+              await github.graphql(setDate, {
+                project: process.env.PUBLIC_PROJECT_ID,
+                item:    process.env.ITEM_ID,
+                field:   process.env.ENDDATE_FIELD_ID,
+                val:     endDate
+              });
+            }
 
   # -------------------- SYNC DE COMENTARIOS (privado -> público) --------------------
   mirror_comment:
