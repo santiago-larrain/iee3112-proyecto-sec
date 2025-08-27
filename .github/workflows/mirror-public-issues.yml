@@ -175,7 +175,7 @@ jobs:
             exit 78
           fi
 
-      - name: Gate: issue tiene la etiqueta requerida (privado)
+      - name: Gate - issue tiene la etiqueta requerida (privado)
         id: gatec
         uses: actions/github-script@v7
         with:
