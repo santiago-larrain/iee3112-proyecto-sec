@@ -11,10 +11,10 @@ permissions:
   issues: read
 
 env:
-  PUBLIC_OWNER: ${{ vars.PUBLIC_OWNER }}
-  PUBLIC_REPO:  ${{ vars.PUBLIC_REPO }}
-  MIRROR_LABEL: ${{ vars.MIRROR_LABEL || 'public' }}
-  COPY_COMMENTS: ${{ vars.COPY_COMMENTS || 'true' }}
+  PUBLIC_OWNER:  Grupo-3-SEC
+  PUBLIC_REPO:   public-iee3112-proyecto-sec
+  MIRROR_LABEL:  public
+  COPY_COMMENTS: true
 
 jobs:
   mirror:
