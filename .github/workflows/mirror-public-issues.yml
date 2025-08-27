@@ -11,9 +11,9 @@ permissions:
   issues: read
 
 env:
-  PUBLIC_OWNER:  santiago-larrain
-  PUBLIC_REPO:   public-iee3112-proyecto-sec
-  MIRROR_LABEL:  public
+  PUBLIC_OWNER: santiago-larrain        # <-- dueño del repo público
+  PUBLIC_REPO:  public-iee3112-proyecto-sec   # <-- nombre del repo público
+  MIRROR_LABEL: public
   COPY_COMMENTS: true
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
     if: ${{ github.event_name == 'issues' || github.event_name == 'issue_comment' }}
     runs-on: ubuntu-latest
     steps:
-      - name: Check label gate (only proceed if issue has MIRROR_LABEL)
+      - name: Check label gate (solo corre si la issue tiene la etiqueta)
         id: checklabel
         uses: actions/github-script@v7
         with:
@@ -34,6 +34,7 @@ jobs:
             } else {
               core.setOutput('allowed', 'false');
             }
+
       - name: Stop if not labeled for mirroring
         if: steps.checklabel.outputs.allowed != 'true'
         run: echo "Issue not labeled for mirroring. Skipping."
@@ -46,37 +47,23 @@ jobs:
           script: |
             const pubOwner = process.env.PUBLIC_OWNER;
             const pubRepo  = process.env.PUBLIC_REPO;
-            if (!pubOwner || !pubRepo) {
-              core.setFailed("PUBLIC_OWNER and PUBLIC_REPO must be set as repo variables.");
-            }
-
             const srcIssue = context.payload.issue;
             const srcNumber = srcIssue.number;
 
-            // Helper: sanitize body (very básico – ajusta a tu política)
+            // Saneamos el contenido para no filtrar secretos
             function sanitize(text) {
               if (!text) return '';
               let t = text;
-              // Borra líneas con palabras típicas de secretos
-              const danger = /(token|secret|password|passwd|apikey|api-key|authorization|bearer|ssh-|PRIVATE KEY)/i;
+              const danger = /(token|secret|password|apikey|PRIVATE KEY|authorization|bearer)/i;
               t = t.split('\n').filter(line => !danger.test(line)).join('\n');
-              // Borra parámetros de query (?...=...) de URLs
-              t = t.replace(/\bhttps?:\/\/[^\s)]+/g, (u) => {
-                try {
-                  const url = new URL(u);
-                  url.search = '';
-                  return url.toString();
-                } catch { return u; }
-              });
               return t.trim();
             }
 
-            // Encabezado y pie para identificar el origen
             const header = `> 🔗 Source: ${context.repo.owner}/${context.repo.repo}#${srcNumber}`;
             const bodySafe = sanitize(srcIssue.body || '');
             const mirroredBody = `${header}\n\n${bodySafe}\n\n<!-- MIRROR-SOURCE:${context.repo.owner}/${context.repo.repo}#${srcNumber} -->`;
 
-            // Buscamos si ya existe mapping en un comentario de la privada
+            // Buscamos si ya existe una issue pública vinculada
             async function findMappingInPrivateComment() {
               const { data: comments } = await github.rest.issues.listComments({
                 owner: context.repo.owner,
@@ -87,7 +74,7 @@ jobs:
               const marker = /<!--\s*MIRROR-TARGET:\s*([^\s#\/]+)\/([^\s#]+)#(\d+)\s*-->/;
               for (const c of comments) {
                 const m = c.body && c.body.match(marker);
-                if (m) return { owner: m[1], repo: m[2], number: Number(m[3]), commentId: c.id };
+                if (m) return { owner: m[1], repo: m[2], number: Number(m[3]) };
               }
               return null;
             }
@@ -104,11 +91,12 @@ jobs:
 
             let mapping = await findMappingInPrivateComment();
 
-            // Si el evento es "issues"
+            // --- Manejo de eventos sobre la issue ---
             if (context.eventName === 'issues') {
               const action = context.payload.action;
+
               if (!mapping) {
-                // Crear issue pública
+                // Crear issue pública nueva
                 const { data: created } = await github.rest.issues.create({
                   owner: pubOwner,
                   repo: pubRepo,
@@ -118,16 +106,10 @@ jobs:
                 });
                 await writeMappingComment(created.number);
                 mapping = { owner: pubOwner, repo: pubRepo, number: created.number };
-              } else {
-                // Asegura que el target esté en el repo esperado (por si moviste variables)
-                if (mapping.owner !== pubOwner || mapping.repo !== pubRepo) {
-                  core.warning(`Mapping points to ${mapping.owner}/${mapping.repo}#${mapping.number}, but variables point to ${pubOwner}/${pubRepo}. Using mapping.`);
-                }
               }
 
-              // Sync según acción
+              // Sincronizar cambios
               if (['opened','edited','labeled','unlabeled'].includes(action)) {
-                // Actualiza título y cuerpo
                 await github.rest.issues.update({
                   owner: mapping.owner,
                   repo: mapping.repo,
@@ -154,18 +136,12 @@ jobs:
               }
             }
 
-            // Si el evento es "issue_comment" y quieres copiar comentarios
-            if (context.eventName === 'issue_comment') {
-              if ((process.env.COPY_COMMENTS || 'true').toLowerCase() !== 'true') {
-                core.info('COPY_COMMENTS disabled. Skipping comment mirroring.');
-                return;
-              }
+            // --- Manejo de comentarios ---
+            if (context.eventName === 'issue_comment' && (process.env.COPY_COMMENTS || 'true').toLowerCase() === 'true') {
               const comment = context.payload.comment;
-              // Ignora comentarios del propio bot para evitar loops
-              if (comment.user && comment.user.type === 'Bot') return;
+              if (comment.user && comment.user.type === 'Bot') return; // evitar loop
 
               if (!mapping) {
-                // Si aún no hay issue pública, créala primero
                 const { data: created } = await github.rest.issues.create({
                   owner: pubOwner,
                   repo: pubRepo,
@@ -177,7 +153,6 @@ jobs:
                 mapping = { owner: pubOwner, repo: pubRepo, number: created.number };
               }
 
-              // Sanitiza comentario
               const safeComment = sanitize(comment.body || '');
               if (safeComment) {
                 await github.rest.issues.createComment({
