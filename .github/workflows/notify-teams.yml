@@ -107,9 +107,9 @@ jobs:
           COMMENT_BODY="${{ github.event.comment.body || '' }}"
 
           # Lista completa de asignados
-          ASSIGNEES_JSON='${{ toJson(github.event.issue-assignees) }}'
-          ASSIGNEES_LSIT="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'map(.login // .) | join(", ")')"
-          
+          ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
+          ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'if type=="array" then map(.login // .) | join(", ") else "" end')"
+
           # Truncado de comentario a 300 chars, una línea
           COMMENT_BODY="${COMMENT_BODY//$'\n'/' '}"
           COMMENT_BODY="$(printf '%.300s' "$COMMENT_BODY")"
@@ -212,10 +212,15 @@ jobs:
           if [ -n "$END_HUMAN" ]; then
             if [ -n "$FOOT" ]; then FOOT="$FOOT   |   📅 $END_HUMAN"; else FOOT="📅 $END_HUMAN"; fi
           fi
-          # Añadir labels al pie si existen (emoji de etiqueta)
+          # --- Labels (formato compacto, robusto a null) ---
+          LABELS_JSON='${{ toJson(github.event.issue.labels) }}'
+          LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
+          
+          # Recorta a 80 caracteres para mantener la tarjeta compacta
           if [ -n "$LABELS_LIST" ]; then
-            FOOT="${FOOT:+$FOOT   |   }🏷️ ${LABELS_LIST}"
+            if [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
           fi
+
           # --- Pie: Asignados (compacto) ---
           if [ -n "$ASSIGNEES_LIST" ]; then
             # recorta para no ensanchar demasiado la tarjeta
