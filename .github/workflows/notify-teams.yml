@@ -113,6 +113,11 @@ jobs:
           # Truncado de comentario a 300 chars, una línea
           COMMENT_BODY="${COMMENT_BODY//$'\n'/' '}"
           COMMENT_BODY="$(printf '%.300s' "$COMMENT_BODY")"
+          
+          ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
+          ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'if type=="array" then map(.login // .) | join(", ") else "" end')"
+          # (opcional) recorte para no alargar
+          if [ -n "$ASSIGNEES_LIST" ] && [ ${#ASSIGNEES_LIST} -gt 60 ]; then ASSIGNEES_LIST="${ASSIGNEES_LIST:0:60}…"; fi
 
           # Encabezado según evento
           if [ "$EVENT" = "issues" ]; then
@@ -129,10 +134,6 @@ jobs:
             
               # Usuario asignado/desasignado (GitHub manda .assignee en el payload)
               WHO="${{ github.event.assignee.login || '' }}"
-            
-              # Lista completa de asignados actuales (por si quieres mostrar todos)
-              ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
-              ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'map(.login // .) | join(", ")')"
             
               if [ "$ACTION" = "assigned" ]; then
                 # Texto compacto: quién asignó a quién, y cómo queda la lista total
@@ -193,15 +194,12 @@ jobs:
             Y=${ENDISO:0:4}; M=${ENDISO:5:2}; D=${ENDISO:8:2}
             END_HUMAN="$D/$M/$Y"
           fi
-          # --- Labels (formato compacto) ---
-          # Toma las etiquetas del evento (si no hay, queda vacío)
+
+          # --- Labels (formato compacto, robusto a null) ---
           LABELS_JSON='${{ toJson(github.event.issue.labels) }}'
-          LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'map(.name // .) | join(", ")')"
-          
-          # Recorta a 80 caracteres para mantener la tarjeta compacta
-          if [ -n "$LABELS_LIST" ]; then
-            if [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
-          fi
+          LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
+          # recorte para mantener la tarjeta compacta
+          if [ -n "$LABELS_LIST" ] && [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
 
           # Línea de pie compacta (solo fin)
           FOOT=""
@@ -212,9 +210,6 @@ jobs:
           if [ -n "$END_HUMAN" ]; then
             if [ -n "$FOOT" ]; then FOOT="$FOOT   |   📅 $END_HUMAN"; else FOOT="📅 $END_HUMAN"; fi
           fi
-          # --- Labels (formato compacto, robusto a null) ---
-          LABELS_JSON='${{ toJson(github.event.issue.labels) }}'
-          LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
           
           # Recorta a 80 caracteres para mantener la tarjeta compacta
           if [ -n "$LABELS_LIST" ]; then
