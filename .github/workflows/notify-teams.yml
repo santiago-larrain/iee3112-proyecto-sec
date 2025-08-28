@@ -117,8 +117,13 @@ jobs:
           # Encabezado según evento
           if [ "$EVENT" = "issues" ]; then
             HEADER="🔔 Issue #${NUM} ${ACTION}"
+            if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
+              DESC="${{ github.event.issue.body || '' }}"
+              DESC="${DESC//$'\r'/ }"
+              DESC="${DESC//$'\n'/' '}"
+              SUMMARY="$(printf '%.500s' "$DESC")"
             # --- Asignaciones: genera un resumen amigable ---
-            if [ "$ACTION" = "assigned" ] || [ "$ACTION" = "unassigned" ]; then
+            elif [ "$ACTION" = "assigned" ] || [ "$ACTION" = "unassigned" ]; then
               # Actor que hace la acción
               ACTOR="${{ github.actor }}"
             
@@ -148,20 +153,9 @@ jobs:
                   SUMMARY="$ACTOR quitó asignado(s)"
                 fi
               fi
-            fi
-            if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
-              # Sólo setear SUMMARY aquí si NO fue ya definido por assigned/unassigned
-              if [ -z "$SUMMARY" ]; then
-                DESC="${{ github.event.issue.body || '' }}"
-                DESC="${DESC//$'\r'/ }"
-                DESC="${DESC//$'\n'/' '}"
-                SUMMARY="$(printf '%.500s' "$DESC")"
-              fi
-            elif [ -z "$SUMMARY" ]; then
-              # Para otros eventos de issue donde no hay descripción ni asignación
+            else
               SUMMARY=""
             fi
-
           else
             HEADER="💬 Comment created on issue #${NUM}"
             SUMMARY="${AUTHOR}: ${COMMENT_BODY}"
