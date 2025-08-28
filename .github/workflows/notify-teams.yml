@@ -113,7 +113,15 @@ jobs:
           # Encabezado según evento
           if [ "$EVENT" = "issues" ]; then
             HEADER="🔔 Issue #${NUM} ${ACTION}"
-            SUMMARY=""
+            if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ]; then
+              # Añadimos también la descripción al SUMMARY
+              DESC="${{ github.event.issue.body || '' }}"
+              DESC="${DESC//$'\r'/ }"
+              DESC="${DESC//$'\n'/' '}"
+              SUMMARY="$(printf '%.500s' "$DESC")"
+            else
+              SUMMARY=""
+            fi
           else
             HEADER="💬 Comment created on issue #${NUM}"
             SUMMARY="${AUTHOR}: ${COMMENT_BODY}"
