@@ -113,7 +113,39 @@ jobs:
           # Encabezado según evento
           if [ "$EVENT" = "issues" ]; then
             HEADER="🔔 Issue #${NUM} ${ACTION}"
-            if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ]; then
+            # --- Asignaciones: genera un resumen amigable ---
+            if [ "$ACTION" = "assigned" ] || [ "$ACTION" = "unassigned" ]; then
+              # Actor que hace la acción
+              ACTOR="${{ github.actor }}"
+            
+              # Usuario asignado/desasignado (GitHub manda .assignee en el payload)
+              WHO="${{ github.event.assignee.login || '' }}"
+            
+              # Lista completa de asignados actuales (por si quieres mostrar todos)
+              ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
+              ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'map(.login // .) | join(", ")')"
+            
+              if [ "$ACTION" = "assigned" ]; then
+                # Texto compacto: quién asignó a quién, y cómo queda la lista total
+                if [ -n "$WHO" ] && [ -n "$ASSIGNEES_LIST" ]; then
+                  SUMMARY="$ACTOR asignó a @$WHO · Asignados: $ASSIGNEES_LIST"
+                elif [ -n "$WHO" ]; then
+                  SUMMARY="$ACTOR asignó a @$WHO"
+                else
+                  SUMMARY="$ACTOR añadió asignado(s) · Asignados: $ASSIGNEES_LIST"
+                fi
+              else
+                # unassigned
+                if [ -n "$WHO" ] && [ -n "$ASSIGNEES_LIST" ]; then
+                  SUMMARY="$ACTOR quitó a @$WHO · Asignados: $ASSIGNEES_LIST"
+                elif [ -n "$WHO" ]; then
+                  SUMMARY="$ACTOR quitó a @$WHO"
+                else
+                  SUMMARY="$ACTOR quitó asignado(s)"
+                fi
+              fi
+            fi
+            if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
               # Añadimos también la descripción al SUMMARY
               DESC="${{ github.event.issue.body || '' }}"
               DESC="${DESC//$'\r'/ }"
@@ -159,6 +191,15 @@ jobs:
             Y=${ENDISO:0:4}; M=${ENDISO:5:2}; D=${ENDISO:8:2}
             END_HUMAN="$D/$M/$Y"
           fi
+          # --- Labels (formato compacto) ---
+          # Toma las etiquetas del evento (si no hay, queda vacío)
+          LABELS_JSON='${{ toJson(github.event.issue.labels) }}'
+          LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'map(.name // .) | join(", ")')"
+          
+          # Recorta a 80 caracteres para mantener la tarjeta compacta
+          if [ -n "$LABELS_LIST" ]; then
+            if [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
+          fi
 
           # Línea de pie compacta (solo fin)
           FOOT=""
@@ -168,6 +209,17 @@ jobs:
           fi
           if [ -n "$END_HUMAN" ]; then
             if [ -n "$FOOT" ]; then FOOT="$FOOT   |   📅 $END_HUMAN"; else FOOT="📅 $END_HUMAN"; fi
+          fi
+          # Añadir labels al pie si existen (emoji de etiqueta)
+          if [ -n "$LABELS_LIST" ]; then
+            FOOT="${FOOT:+$FOOT   |   }🏷️ ${LABELS_LIST}"
+          fi
+          # --- Pie: Asignados (compacto) ---
+          if [ -n "$ASSIGNEES_LIST" ]; then
+            # recorta para no ensanchar demasiado la tarjeta
+            A_SHOW="$ASSIGNEES_LIST"
+            if [ ${#A_SHOW} -gt 60 ]; then A_SHOW="${A_SHOW:0:60}…"; fi
+            FOOT="${FOOT:+$FOOT   |   }👤 ${A_SHOW}"
           fi
 
           # Construcción de la tarjeta
