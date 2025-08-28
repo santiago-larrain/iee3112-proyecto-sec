@@ -1,8 +1,8 @@
-name: Notify Teams via Flow
+name: Notify Teams via Flow (compact card)
 
 on:
   issues:
-    types: [opened, closed, reopened]
+    types: [opened, closed, reopened, edited, labeled, unlabeled, assigned, unassigned]
   issue_comment:
     types: [created]
   workflow_dispatch: {}
@@ -11,32 +11,160 @@ permissions:
   contents: read
   issues: read
 
+env:
+  PROJECT_ID:           ${{ vars.PUBLIC_PROJECT_ID }}
+  STATUS_FIELD_ID:      ${{ vars.PUBLIC_STATUS_FIELD_ID }}
+  PRIORITY_FIELD_ID:    ${{ vars.PUBLIC_PRIORITY_FIELD_ID }}
+  ENDDATE_FIELD_ID:     ${{ vars.PUBLIC_ENDDATE_FIELD_ID }}
+
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
+      # 1) Obtener campos del Project v2 para esta issue (status/priority/end)
+      - name: Read Project fields (status/priority/end)
+        id: fields
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.PROJECTS_TOKEN }}
+          script: |
+            const projectId   = process.env.PROJECT_ID;
+            const statusFId   = process.env.STATUS_FIELD_ID;
+            const priorityFId = process.env.PRIORITY_FIELD_ID;
+            const endFId      = process.env.ENDDATE_FIELD_ID;
+
+            // node_id de la issue del evento
+            const issueNodeId = context.payload.issue.node_id;
+
+            // Paginamos items del Project y buscamos el que tenga como content esta issue
+            const q = `
+              query($project:ID!, $after:String){
+                node(id:$project){
+                  ... on ProjectV2 {
+                    items(first:100, after:$after){
+                      nodes{
+                        id
+                        content { __typename ... on Issue { id } }
+                        fieldValues(first:50){
+                          nodes{
+                            __typename
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              name
+                              field { ... on ProjectV2FieldCommon { id } }
+                            }
+                            ... on ProjectV2ItemFieldDateValue {
+                              date
+                              field { ... on ProjectV2FieldCommon { id } }
+                            }
+                          }
+                        }
+                      }
+                      pageInfo{ hasNextPage endCursor }
+                    }
+                  }
+                }
+              }`;
+            let after = null, found = null;
+            do {
+              const r = await github.graphql(q, { project: projectId, after });
+              const page = r.node.items;
+              for (const it of page.nodes) {
+                const c = it.content;
+                if (c && c.__typename === 'Issue' && c.id === issueNodeId) { found = it; break; }
+              }
+              after = (found || !page.pageInfo.hasNextPage) ? null : page.pageInfo.endCursor;
+            } while(after);
+
+            let status = null, priority = null, endDate = null;
+            if (found) {
+              for (const fv of (found.fieldValues?.nodes || [])) {
+                if (fv.__typename === 'ProjectV2ItemFieldSingleSelectValue') {
+                  const fid = fv.field?.id;
+                  if (fid === statusFId)   status   = fv.name || null;
+                  if (fid === priorityFId) priority = fv.name || null;
+                }
+                if (fv.__typename === 'ProjectV2ItemFieldDateValue' && fv.field?.id === endFId) {
+                  endDate = fv.date || null; // YYYY-MM-DD
+                }
+              }
+            }
+            core.setOutput('status',   status || '');
+            core.setOutput('priority', priority || '');
+            core.setOutput('endDate',  endDate || '');
+
+      # 2) Construir Adaptive Card compacta (con tus colores/emojis)
       - name: Build Adaptive Card payload
+        id: payload
+        shell: bash
         run: |
+          # Datos básicos del evento
           EVENT="${{ github.event_name }}"
           ACTION="${{ github.event.action }}"
-          TITLE=""
-          SUB=""
-          URL=""
+          NUM="${{ github.event.issue.number }}"
+          TITLE_ISSUE="${{ github.event.issue.title }}"
+          URL_ISSUE="${{ github.event.issue.html_url }}"
+          AUTHOR="${{ github.event.comment.user.login || github.actor }}"
+          COMMENT_BODY="${{ github.event.comment.body || '' }}"
 
+          # Truncado de comentario a 300 chars, una línea
+          COMMENT_BODY="${COMMENT_BODY//$'\n'/' '}"
+          COMMENT_BODY="$(printf '%.300s' "$COMMENT_BODY")"
+
+          # Encabezado según evento
           if [ "$EVENT" = "issues" ]; then
-            NUM="${{ github.event.issue.number }}"
-            TITLE="🔔 Issue #${NUM} ${ACTION}"
-            SUB="${{ github.event.issue.title }}"
-            URL="${{ github.event.issue.html_url }}"
+            HEADER="🔔 Issue #${NUM} ${ACTION}"
+            SUMMARY=""
           else
-            NUM="${{ github.event.issue.number }}"
-            TITLE="💬 Comment ${ACTION} on issue #${NUM}"
-            BODY="$(printf '%.300s' "${{ github.event.comment.body }}" )"
-            SUB="${{ github.event.comment.user.login }}: $BODY"
-            URL="${{ github.event.issue.html_url }}"
+            HEADER="💬 Comment created on issue #${NUM}"
+            SUMMARY="${AUTHOR}: ${COMMENT_BODY}"
           fi
 
-          cat > payload.json <<EOF
+          # Campos desde el Project
+          STATUS="${{ steps.fields.outputs.status }}"
+          PRIORITY="${{ steps.fields.outputs.priority }}"
+          ENDISO="${{ steps.fields.outputs.endDate }}"
+
+          # Mapas de emoji por tu guía de colores
+          # Prioridades: P0 (Rojo), Hito 1 (Amarillo), Hito 2 (Azul)
+          PRI_EMOJI=""
+          case "$PRIORITY" in
+            P0) PRI_EMOJI="🔴";;
+            "Hito 1") PRI_EMOJI="🟡";;
+            "Hito 2") PRI_EMOJI="🔵";;
+            *) PRI_EMOJI="⚪️";;
+          esac
+
+          # Estados: Backlog (Rojo), Ready (Azul), In Progress (Amarillo), In review (Morado), Done (Verde)
+          ST_EMOJI=""
+          case "$STATUS" in
+            Backlog)     ST_EMOJI="🔴";;
+            Ready)       ST_EMOJI="🔵";;
+            "In progress"|"In Progress") ST_EMOJI="🟡";;
+            "In review"|"In Review")     ST_EMOJI="🟣";;
+            Done)        ST_EMOJI="🟢";;
+            *)           ST_EMOJI="⚪️";;
+          esac
+
+          # Fecha de término en dd/mm/yyyy (si existe)
+          END_HUMAN=""
+          if [ -n "$ENDISO" ]; then
+            Y=${ENDISO:0:4}; M=${ENDISO:5:2}; D=${ENDISO:8:2}
+            END_HUMAN="$D/$M/$Y"
+          fi
+
+          # Línea de pie compacta (solo fin)
+          FOOT=""
+          if [ -n "$PRIORITY" ]; then FOOT="$PRI_EMOJI $PRIORITY"; fi
+          if [ -n "$STATUS" ]; then
+            if [ -n "$FOOT" ]; then FOOT="$FOOT   |   $ST_EMOJI $STATUS"; else FOOT="$ST_EMOJI $STATUS"; fi
+          fi
+          if [ -n "$END_HUMAN" ]; then
+            if [ -n "$FOOT" ]; then FOOT="$FOOT   |   📅 $END_HUMAN"; else FOOT="📅 $END_HUMAN"; fi
+          fi
+
+          # Construcción de la tarjeta
+          # Encabezado (Small / sutil), Título como link clicable, Resumen (máx 3 líneas), Pie en sutil
+          cat > payload.json <<JSON
           {
             "type": "message",
             "attachments": [
@@ -47,18 +175,22 @@ jobs:
                   "type": "AdaptiveCard",
                   "version": "1.5",
                   "body": [
-                    { "type": "TextBlock", "weight": "Bolder", "size": "Medium", "text": "$TITLE" },
-                    { "type": "TextBlock", "wrap": true, "text": "$SUB" }
+                    { "type": "TextBlock", "text": "$HEADER", "size": "Small", "weight": "Bolder", "isSubtle": true, "wrap": true },
+                    { "type": "TextBlock", "text": "[$TITLE_ISSUE]($URL_ISSUE)", "size": "Medium", "weight": "Bolder", "wrap": true },
+                    { "type": "TextBlock", "text": "$SUMMARY", "wrap": true, "maxLines": 3, "spacing": "Small" },
+                    { "type": "TextBlock", "text": "$FOOT", "isSubtle": true, "spacing": "Small", "wrap": true }
                   ],
                   "actions": [
-                    { "type": "Action.OpenUrl", "title": "Ver en GitHub", "url": "$URL" }
+                    { "type": "Action.OpenUrl", "title": "Ver en GitHub", "url": "$URL_ISSUE" }
                   ]
                 }
               }
             ]
           }
-          EOF
+          JSON
+          cat payload.json
 
+      # 3) Enviar al Flow de Teams
       - name: Send to Teams
         env:
           HOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
