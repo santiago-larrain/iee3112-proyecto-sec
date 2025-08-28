@@ -106,6 +106,10 @@ jobs:
           AUTHOR="${{ github.event.comment.user.login || github.actor }}"
           COMMENT_BODY="${{ github.event.comment.body || '' }}"
 
+          # Lista completa de asignados
+          ASSIGNEES_JSON='${{ toJson(github.event.issue-assignees) }}'
+          ASSIGNEES_LSIT="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'map(.login // .) | join(", ")')"
+          
           # Truncado de comentario a 300 chars, una línea
           COMMENT_BODY="${COMMENT_BODY//$'\n'/' '}"
           COMMENT_BODY="$(printf '%.300s' "$COMMENT_BODY")"
@@ -146,14 +150,18 @@ jobs:
               fi
             fi
             if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
-              # Añadimos también la descripción al SUMMARY
-              DESC="${{ github.event.issue.body || '' }}"
-              DESC="${DESC//$'\r'/ }"
-              DESC="${DESC//$'\n'/' '}"
-              SUMMARY="$(printf '%.500s' "$DESC")"
-            else
+              # Sólo setear SUMMARY aquí si NO fue ya definido por assigned/unassigned
+              if [ -z "$SUMMARY" ]; then
+                DESC="${{ github.event.issue.body || '' }}"
+                DESC="${DESC//$'\r'/ }"
+                DESC="${DESC//$'\n'/' '}"
+                SUMMARY="$(printf '%.500s' "$DESC")"
+              fi
+            elif [ -z "$SUMMARY" ]; then
+              # Para otros eventos de issue donde no hay descripción ni asignación
               SUMMARY=""
             fi
+
           else
             HEADER="💬 Comment created on issue #${NUM}"
             SUMMARY="${AUTHOR}: ${COMMENT_BODY}"
