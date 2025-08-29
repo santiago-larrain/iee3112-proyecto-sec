@@ -119,7 +119,7 @@ jobs:
           if [ "$EVENT" = "issues" ]; then
             HEADER="🔔 Issue #${NUM} ${ACTION}"
             if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
-              if [ -z "SUMMARY" ]; then
+              if [ -z "$SUMMARY" ]; then
                 DESC_RAW='${{ github.event.issue.body || '' }}'
                 SUMMARY="$(printf '%s' "$DESC_RAW" | tr '\r\n' ' ' | head -c 500)"
               fi
@@ -176,13 +176,16 @@ jobs:
           # Estados: Backlog (Rojo), Ready (Azul), In Progress (Amarillo), In review (Morado), Done (Verde)
           ST_EMOJI=""
           case "$STATUS" in
-            Backlog)     ST_EMOJI="🔴";;
-            Ready)       ST_EMOJI="🔵";;
-            "In progress"|"In Progress") ST_EMOJI="🟡";;
-            "In review"|"In Review")     ST_EMOJI="🟣";;
-            Done)        ST_EMOJI="🟢";;
-            *)           ST_EMOJI="⚪️";;
+            Backlog) ST_EMOJI="🔴" ;;
+            Ready)   ST_EMOJI="🔵" ;;
+            In\ progress) ST_EMOJI="🟡" ;;
+            In\ Progress) ST_EMOJI="🟡" ;;
+            In\ review)   ST_EMOJI="🟣" ;;
+            In\ Review)   ST_EMOJI="🟣" ;;
+            Done)    ST_EMOJI="🟢" ;;
+            *)       ST_EMOJI="⚪️" ;;
           esac
+
 
           # Fecha de término en dd/mm/yyyy (si existe)
           END_HUMAN=""
