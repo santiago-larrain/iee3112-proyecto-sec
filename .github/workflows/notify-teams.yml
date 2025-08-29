@@ -103,7 +103,11 @@ jobs:
           NUM="${{ github.event.issue.number }}"
           TITLE_ISSUE="${{ github.event.issue.title }}"
           URL_ISSUE="${{ github.event.issue.html_url }}"
-          AUTHOR="${{ github.event.comment.user.login || github.actor }}"
+          if [ -n "${{ github.event.comment.user.login }}" ]; then
+            AUTHOR="${{ github.event.comment.user.login }}"
+          else
+            AUTHOR="${{ github.actor }}"
+          fi
           COMMENT_BODY_RAW='${{ github.event.comment.body || '' }}'
           COMMENT_BODY="$(printf '%s' "$COMMENT_BODY_RAW" | tr '\r\n' ' ' | head -c 300)"
 
