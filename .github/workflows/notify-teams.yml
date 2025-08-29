@@ -178,12 +178,11 @@ jobs:
           case "$STATUS" in
             Backlog) ST_EMOJI="🔴" ;;
             Ready)   ST_EMOJI="🔵" ;;
-            In\ progress) ST_EMOJI="🟡" ;;
-            In\ Review)   ST_EMOJI="🟣" ;;
+            "In progress") ST_EMOJI="🟡" ;;
+            "In Review")   ST_EMOJI="🟣" ;;
             Done)    ST_EMOJI="🟢" ;;
             *)       ST_EMOJI="⚪️" ;;
           esac
-
 
           # Fecha de término en dd/mm/yyyy (si existe)
           END_HUMAN=""
