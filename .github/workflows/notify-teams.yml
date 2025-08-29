@@ -179,8 +179,6 @@ jobs:
             Backlog) ST_EMOJI="🔴" ;;
             Ready)   ST_EMOJI="🔵" ;;
             In\ progress) ST_EMOJI="🟡" ;;
-            In\ Progress) ST_EMOJI="🟡" ;;
-            In\ review)   ST_EMOJI="🟣" ;;
             In\ Review)   ST_EMOJI="🟣" ;;
             Done)    ST_EMOJI="🟢" ;;
             *)       ST_EMOJI="⚪️" ;;
