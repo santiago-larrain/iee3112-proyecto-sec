@@ -2,7 +2,7 @@ name: Project - notify on Status changes (cache)
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # cada 15 minutos (UTC)
+    - cron: "0 * * * *"   # cada hora en el minuto 0
   workflow_dispatch: {}
 
 # Concurrency para evitar solapamientos si tarda más de 15'
