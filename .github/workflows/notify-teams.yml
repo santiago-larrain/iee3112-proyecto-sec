@@ -116,7 +116,7 @@ jobs:
           if [ -n "$ASSIGNEES_LIST" ] && [ ${#ASSIGNEES_LIST} -gt 60 ]; then ASSIGNEES_LIST="${ASSIGNEES_LIST:0:60}…"; fi
 
           # Labels (robusto a null) y recorte
-          LABELS_JSON='${{ toJson(github.event.issue.labels) }}'
+          LABELS_JSON='${{ toJson(github.event.issue.labels || []) }}'
           LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
           if [ -n "$LABELS_LIST" ] && [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
 
