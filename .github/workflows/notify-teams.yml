@@ -101,8 +101,6 @@ jobs:
           # --- Inicializaciones para -u ---
           HEADER=""; SUMMARY=""
           PRI_EMOJI=""; ST_EMOJI=""
-          ASSIGNEES_JSON_RAW=''; ASSIGNEES_JSON=''; ASSIGNEES_LIST=''
-          LABELS_JSON_RAW='';    LABELS_JSON='';    LABELS_LIST=''
           FOOT=""
 
           # ------------------ Datos del evento ------------------
@@ -113,20 +111,15 @@ jobs:
           URL_ISSUE="${{ github.event.issue.html_url }}"
 
           AUTHOR="${{ github.event.comment.user.login || github.actor }}"
-          COMMENT_BODY_RAW='${{ github.event.comment.body || '' }}'
+          COMMENT_BODY_RAW="$(jq -r '.comment.body // ""' "$GITHUB_EVENT_PATH")"
           COMMENT_BODY="$(printf '%s' "$COMMENT_BODY_RAW" | tr '\r\n' ' ' | head -c 300)"
 
-          # Asignados (robusto a null) + recorte
-          ASSIGNEES_JSON_RAW='${{ toJson(github.event.issue.assignees) }}'
-          ASSIGNEES_JSON="${ASSIGNEES_JSON_RAW:-[]}"
-          ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'if type=="array" then map(.login // .) | join(", ") else "" end')"
-          if [ -n "$ASSIGNEES_LIST" ] && [ ${#ASSIGNEES_LIST} -gt 60 ]; then ASSIGNEES_LIST="${ASSIGNEES_LIST:0:60}…"; fi
+          # Asignados y labels: leer SIEMPRE del payload (evita interpolaciones peligrosas)
+          ASSIGNEES_LIST="$(jq -r 'if .issue.assignees then [.issue.assignees[]?.login] | join(", ") else "" end' "$GITHUB_EVENT_PATH")"
+          [ -n "$ASSIGNEES_LIST" ] && [ ${#ASSIGNEES_LIST} -gt 60 ] && ASSIGNEES_LIST="${ASSIGNEES_LIST:0:60}…"
 
-          # Labels (robusto a null) + recorte
-          LABELS_JSON_RAW='${{ toJson(github.event.issue.labels) }}'
-          LABELS_JSON="${LABELS_JSON_RAW:-[]}"
-          LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
-          if [ -n "$LABELS_LIST" ] && [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
+          LABELS_LIST="$(jq -r 'if .issue.labels then [.issue.labels[]?.name] | join(", ") else "" end' "$GITHUB_EVENT_PATH")"
+          [ -n "$LABELS_LIST" ] && [ ${#LABELS_LIST} -gt 80 ] && LABELS_LIST="${LABELS_LIST:0:80}…"
 
           # ------------------ Encabezado + resumen ------------------
           if [ "$EVENT" = "issues" ]; then
@@ -135,7 +128,7 @@ jobs:
             # Asignaciones
             if [ "$ACTION" = "assigned" ] || [ "$ACTION" = "unassigned" ]; then
               ACTOR="${{ github.actor }}"
-              WHO="${{ github.event.assignee.login || '' }}"
+              WHO="$(jq -r '.assignee.login // ""' "$GITHUB_EVENT_PATH")"
               if [ "$ACTION" = "assigned" ]; then
                 SUMMARY="$ACTOR asignó${WHO:+ a @$WHO}"
               else
@@ -147,18 +140,18 @@ jobs:
             # Descripción en opened/edited/reopened (si no hubo summary previo)
             if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
               if [ -z "$SUMMARY" ]; then
-                DESC_RAW='${{ github.event.issue.body || '' }}'
+                DESC_RAW="$(jq -r '.issue.body // ""' "$GITHUB_EVENT_PATH")"
                 SUMMARY="$(printf '%s' "$DESC_RAW" | tr '\r\n' ' ' | head -c 500)"
               fi
             fi
 
             # Etiquetado puntual
             if [ "$ACTION" = "labeled" ]; then
-              LNAME="${{ github.event.label.name || '' }}"
+              LNAME="$(jq -r '.label.name // ""' "$GITHUB_EVENT_PATH")"
               [ -n "$LNAME" ] && SUMMARY="Etiqueta añadida: $LNAME"
             fi
             if [ "$ACTION" = "unlabeled" ]; then
-              LNAME="${{ github.event.label.name || '' }}"
+              LNAME="$(jq -r '.label.name // ""' "$GITHUB_EVENT_PATH")"
               [ -n "$LNAME" ] && SUMMARY="Etiqueta quitada: $LNAME"
             fi
 
