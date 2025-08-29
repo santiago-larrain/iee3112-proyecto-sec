@@ -177,8 +177,8 @@ jobs:
           case "$STATUS" in
             Backlog)     ST_EMOJI="🔴";;
             Ready)       ST_EMOJI="🔵";;
-            "In progress"|"In Progress") ST_EMOJI="🟡";;
-            "In review"|"In Review")     ST_EMOJI="🟣";;
+            In\ progress|In\ Progress) ST_EMOJI="🟡";;
+            In\ review|In\ Review)     ST_EMOJI="🟣";;
             Done)        ST_EMOJI="🟢";;
             *)           ST_EMOJI="⚪️";;
           esac
