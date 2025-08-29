@@ -104,7 +104,8 @@ jobs:
           TITLE_ISSUE="${{ github.event.issue.title }}"
           URL_ISSUE="${{ github.event.issue.html_url }}"
           AUTHOR="${{ github.event.comment.user.login || github.actor }}"
-          COMMENT_BODY="${{ github.event.comment.body || '' }}"
+          COMMENT_BODY_RAW='${{ github.event.comment.body || '' }}'
+          COMMENT_BODY="$(printf '%s' "$COMMENT_BODY_RAW" | tr '\r\n' ' ' | head -c 300)"
 
           # Lista completa de asignados
           ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
@@ -118,10 +119,10 @@ jobs:
           if [ "$EVENT" = "issues" ]; then
             HEADER="🔔 Issue #${NUM} ${ACTION}"
             if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
-              DESC="${{ github.event.issue.body || '' }}"
-              DESC="${DESC//$'\r'/ }"
-              DESC="${DESC//$'\n'/' '}"
-              SUMMARY="$(printf '%.500s' "$DESC")"
+              if [ -z "SUMMARY" ]; then
+                DESC_RAW='${{ github.event.issue.body || '' }}'
+                SUMMARY="$(printf '%s' "$DESC_RAW" | tr '\r\n' ' ' | head -c 500)"
+              fi
             # --- Asignaciones: genera un resumen amigable ---
             elif [ "$ACTION" = "assigned" ] || [ "$ACTION" = "unassigned" ]; then
               # Actor que hace la acción
@@ -177,8 +178,8 @@ jobs:
           case "$STATUS" in
             Backlog)     ST_EMOJI="🔴";;
             Ready)       ST_EMOJI="🔵";;
-            In\ progress|In\ Progress) ST_EMOJI="🟡";;
-            In\ review|In\ Review)     ST_EMOJI="🟣";;
+            "In progress"|"In Progress") ST_EMOJI="🟡";;
+            "In review"|"In Review")     ST_EMOJI="🟣";;
             Done)        ST_EMOJI="🟢";;
             *)           ST_EMOJI="⚪️";;
           esac
@@ -193,8 +194,6 @@ jobs:
           # --- Labels (formato compacto, robusto a null) ---
           LABELS_JSON='${{ toJson(github.event.issue.labels) }}'
           LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
-          # recorte para mantener la tarjeta compacta
-          if [ -n "$LABELS_LIST" ] && [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
 
           # Línea de pie compacta (solo fin)
           FOOT=""
@@ -206,9 +205,9 @@ jobs:
             if [ -n "$FOOT" ]; then FOOT="$FOOT   |   📅 $END_HUMAN"; else FOOT="📅 $END_HUMAN"; fi
           fi
           
-          # Recorta a 80 caracteres para mantener la tarjeta compacta
+          # Añadir labels al pie
           if [ -n "$LABELS_LIST" ]; then
-            if [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
+            FOOT="${FOOT:+$FOOT   |   }🏷️ ${LABELS_LIST}"
           fi
 
           # --- Pie: Asignados (compacto) ---
@@ -219,6 +218,14 @@ jobs:
             FOOT="${FOOT:+$FOOT   |   }👤 ${A_SHOW}"
           fi
 
+          # Escapar para JSON simple
+          for VAR in HEADER TITLE_ISSUE URL_ISSUE SUMMARY FOOT; do
+            VAL="$(printf '%s' "${!VAR}")"
+            VAL="${VAL//\\/\\\\}"
+            VAL="${VAL//\"/\\\"}"
+            printf -v "$VAR" '%s' "$VAL"
+          done
+          
           # Construcción de la tarjeta
           # Encabezado (Small / sutil), Título como link clicable, Resumen (máx 3 líneas), Pie en sutil
           cat > payload.json <<JSON
