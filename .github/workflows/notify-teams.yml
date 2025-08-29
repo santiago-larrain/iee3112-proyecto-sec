@@ -21,7 +21,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      # 1) Leer campos del Project v2 (status, priority, end date) para esta issue
+      # 1) Leer campos del Project v2 para esta issue (Status, Priority, End date)
       - name: Read Project fields (status/priority/end)
         id: fields
         uses: actions/github-script@v7
@@ -91,13 +91,19 @@ jobs:
             core.setOutput('priority', priority || '');
             core.setOutput('endDate',  endDate  || '');
 
-      # 2) Construir la Adaptive Card compacta y enviarla al Flow de Teams
+      # 2) Construir la Adaptive Card y enviarla al Flow de Teams
       - name: Build & Send Adaptive Card
         shell: bash
         env:
           HOOK: ${{ secrets.TEAMS_WEBHOOK_URL }}
         run: |
           set -euo pipefail
+          # --- Inicializaciones para -u ---
+          HEADER=""; SUMMARY=""
+          PRI_EMOJI=""; ST_EMOJI=""
+          ASSIGNEES_JSON_RAW=''; ASSIGNEES_JSON=''; ASSIGNEES_LIST=''
+          LABELS_JSON_RAW='';    LABELS_JSON='';    LABELS_LIST=''
+          FOOT=""
 
           # ------------------ Datos del evento ------------------
           EVENT="${{ github.event_name }}"
@@ -110,24 +116,23 @@ jobs:
           COMMENT_BODY_RAW='${{ github.event.comment.body || '' }}'
           COMMENT_BODY="$(printf '%s' "$COMMENT_BODY_RAW" | tr '\r\n' ' ' | head -c 300)"
 
-          # Asignados (robusto a null) y recorte
-          ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
+          # Asignados (robusto a null) + recorte
+          ASSIGNEES_JSON_RAW='${{ toJson(github.event.issue.assignees) }}'
+          ASSIGNEES_JSON="${ASSIGNEES_JSON_RAW:-[]}"
           ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'if type=="array" then map(.login // .) | join(", ") else "" end')"
           if [ -n "$ASSIGNEES_LIST" ] && [ ${#ASSIGNEES_LIST} -gt 60 ]; then ASSIGNEES_LIST="${ASSIGNEES_LIST:0:60}…"; fi
 
-          # Labels (robusto a null) y recorte
-          LABELS_JSON='${{ toJson(github.event.issue.labels || []) }}'
+          # Labels (robusto a null) + recorte
+          LABELS_JSON_RAW='${{ toJson(github.event.issue.labels) }}'
+          LABELS_JSON="${LABELS_JSON_RAW:-[]}"
           LABELS_LIST="$(printf '%s' "$LABELS_JSON" | jq -r 'if type=="array" then map(.name // .) | join(", ") else "" end')"
           if [ -n "$LABELS_LIST" ] && [ ${#LABELS_LIST} -gt 80 ]; then LABELS_LIST="${LABELS_LIST:0:80}…"; fi
 
           # ------------------ Encabezado + resumen ------------------
-          HEADER=""
-          SUMMARY=""
-
           if [ "$EVENT" = "issues" ]; then
             HEADER="🔔 Issue #${NUM} ${ACTION}"
 
-            # Texto para asignaciones
+            # Asignaciones
             if [ "$ACTION" = "assigned" ] || [ "$ACTION" = "unassigned" ]; then
               ACTOR="${{ github.actor }}"
               WHO="${{ github.event.assignee.login || '' }}"
@@ -139,7 +144,7 @@ jobs:
               [ -n "$ASSIGNEES_LIST" ] && SUMMARY="${SUMMARY} · Asignados: $ASSIGNEES_LIST"
             fi
 
-            # Descripción en opened/edited/reopened (si no hay summary anterior)
+            # Descripción en opened/edited/reopened (si no hubo summary previo)
             if [ "$ACTION" = "opened" ] || [ "$ACTION" = "edited" ] || [ "$ACTION" = "reopened" ]; then
               if [ -z "$SUMMARY" ]; then
                 DESC_RAW='${{ github.event.issue.body || '' }}'
@@ -147,7 +152,7 @@ jobs:
               fi
             fi
 
-            # Etiquetado: muestra qué label cambió
+            # Etiquetado puntual
             if [ "$ACTION" = "labeled" ]; then
               LNAME="${{ github.event.label.name || '' }}"
               [ -n "$LNAME" ] && SUMMARY="Etiqueta añadida: $LNAME"
@@ -157,7 +162,6 @@ jobs:
               [ -n "$LNAME" ] && SUMMARY="Etiqueta quitada: $LNAME"
             fi
 
-            # Para otros eventos de issue, si no hay summary, dejar vacío
             [ -z "$SUMMARY" ] && SUMMARY=""
 
           else
@@ -172,13 +176,13 @@ jobs:
 
           # Emojis por prioridad
           case "$PRIORITY" in
-            P0)       PRI_EMOJI="🔴" ;;
-            Hito\ 1)  PRI_EMOJI="🟡" ;;
-            Hito\ 2)  PRI_EMOJI="🔵" ;;
-            *)        PRI_EMOJI="⚪️" ;;
+            P0)      PRI_EMOJI="🔴" ;;
+            Hito\ 1) PRI_EMOJI="🟡" ;;
+            Hito\ 2) PRI_EMOJI="🔵" ;;
+            *)       PRI_EMOJI="⚪️" ;;
           esac
 
-          # Emojis por estado
+          # Emojis por estado (sin comillas y escapando espacios)
           case "$STATUS" in
             Backlog)                   ST_EMOJI="🔴" ;;
             Ready)                     ST_EMOJI="🔵" ;;
@@ -196,7 +200,6 @@ jobs:
           fi
 
           # ------------------ Pie compacto ------------------
-          FOOT=""
           [ -n "$PRIORITY"  ] && FOOT="${FOOT:+$FOOT   |   }${PRI_EMOJI} ${PRIORITY}"
           [ -n "$STATUS"    ] && FOOT="${FOOT:+$FOOT   |   }${ST_EMOJI} ${STATUS}"
           [ -n "$END_HUMAN" ] && FOOT="${FOOT:+$FOOT   |   }📅 ${END_HUMAN}"
