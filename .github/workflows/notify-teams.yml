@@ -113,11 +113,6 @@ jobs:
           # Truncado de comentario a 300 chars, una línea
           COMMENT_BODY="${COMMENT_BODY//$'\n'/' '}"
           COMMENT_BODY="$(printf '%.300s' "$COMMENT_BODY")"
-          
-          ASSIGNEES_JSON='${{ toJson(github.event.issue.assignees) }}'
-          ASSIGNEES_LIST="$(printf '%s' "$ASSIGNEES_JSON" | jq -r 'if type=="array" then map(.login // .) | join(", ") else "" end')"
-          # (opcional) recorte para no alargar
-          if [ -n "$ASSIGNEES_LIST" ] && [ ${#ASSIGNEES_LIST} -gt 60 ]; then ASSIGNEES_LIST="${ASSIGNEES_LIST:0:60}…"; fi
 
           # Encabezado según evento
           if [ "$EVENT" = "issues" ]; then
