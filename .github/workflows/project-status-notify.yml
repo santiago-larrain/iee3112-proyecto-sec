@@ -165,7 +165,7 @@ jobs:
             [ -n "$END_H" ] && FOOT="${FOOT:+$FOOT   |   }📅 $END_H"
 
             # Adaptive Card compacta
-            jq -n --arg h "🔁 Status cambiado en issue #$NUM: $OLD → $NEW" \
+            jq -n --arg h "🔁 issue #$NUM $OLD → $NEW" \
                   --arg t "$TITLE" \
                   --arg u "$URL" \
                   --arg foot "$FOOT" '
