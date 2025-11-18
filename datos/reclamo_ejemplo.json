@@ -1,0 +1,9 @@
+{
+  "numero_reclamo": "REC-2024-001",
+  "numero_cliente": "12345678",
+  "distribuidora": "enel",
+  "fecha_ingreso": "2024-01-15",
+  "titulo": "Facturación Excesiva - Enero 2024",
+  "descripcion": "Mi factura del mes de enero 2024 es muy alta comparada con meses anteriores. El consumo registrado es de 850 kWh, cuando normalmente consumo entre 300 y 400 kWh mensuales. Esto representa más del doble de mi consumo habitual. Solicito revisión del medidor y verificación de la lectura."
+}
+

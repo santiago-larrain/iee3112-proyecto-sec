@@ -1,0 +1,4 @@
+"""
+Utilidades compartidas del sistema
+"""
+

@@ -1,0 +1,32 @@
+# Dependencias del Sistema de Análisis de Reclamos SEC
+
+# Web Scraping
+selenium>=4.15.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+playwright>=1.40.0
+
+# Procesamiento de PDFs
+pdfplumber>=0.10.0
+PyPDF2>=3.0.0
+
+# Base de datos
+sqlalchemy>=2.0.0
+psycopg2-binary>=2.9.0  # Para PostgreSQL (opcional)
+
+# Configuración
+pyyaml>=6.0.1
+
+# Utilidades
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# Generación de documentos
+reportlab>=4.0.0  # Para PDFs
+jinja2>=3.1.2  # Para templates HTML
+matplotlib>=3.7.0  # Para gráficos
+
+# Testing (opcional)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+

@@ -1,0 +1,261 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    SISTEMA DE ANÁLISIS DE RECLAMOS SEC
+                    Diagrama de Estructura y Flujo
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CAPA 1: ENTRADA                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    [Reclamo JSON]          [Credenciales]          [Base de Datos]
+    └─ datos/reclamo_       └─ datos/credenciales_  └─ data/sec_reclamos.db
+       ejemplo.json            ejemplo.json             (boletas existentes)
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CAPA 2: PROCESAMIENTO                                     │
+│                    (Orquestador: main.py)                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MÓDULO 1: OBTENCIÓN DE BOLETAS (modulos/obtencion_boletas/)                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────┐                                                        │
+│  │ ScraperFactory  │                                                        │
+│  └────────┬────────┘                                                        │
+│           │                                                                 │
+│           ├──→ [EnelScraper] ──┐                                           │
+│           ├──→ [CGEScraper]    │ (pendiente)                               │
+│           └──→ [SaesaScraper]  │                                           │
+│                                 │                                           │
+│  ┌──────────────────────────────┴──────────┐                                │
+│  │         ScraperBase (abstracta)         │                                │
+│  │  - Login                                │                                │
+│  │  - Obtener Boletas                      │                                │
+│  │  - Sesiones, Retry, Logging             │                                │
+│  └─────────────────┬───────────────────────┘                                │
+│                    │                                                         │
+│                    ↓                                                         │
+│  ┌──────────────────────────────┐                                           │
+│  │    ExtractorDatos            │                                           │
+│  │  - Parsear PDF/HTML          │                                           │
+│  │  - Extraer datos estructurados│                                          │
+│  └──────────────┬───────────────┘                                           │
+│                 │                                                            │
+│                 ↓                                                            │
+│  ┌──────────────────────────────┐                                           │
+│  │    ValidadorBoletas          │                                           │
+│  │  - Validar completitud       │                                           │
+│  │  - Validar corrección         │                                           │
+│  └──────────────┬───────────────┘                                           │
+│                 │                                                            │
+│                 ↓                                                            │
+│         [BaseDatos] ──→ Guardar boletas                                      │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MÓDULO 2: CONSOLIDACIÓN JURÍDICO-TÉCNICA                                    │
+│ (modulos/consolidacion_juridico_tecnica/)                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────────┐                                              │
+│  │ ClasificadorTipologias    │                                              │
+│  │  - Analiza descripción    │                                              │
+│  │  - Busca keywords         │                                              │
+│  │  - Usa: manual_reclamos_  │                                              │
+│  │         2025.json          │                                              │
+│  └───────────┬───────────────┘                                              │
+│              │                                                                │
+│              ↓ (tipología)                                                    │
+│  ┌──────────────────────────┐                                              │
+│  │ AnalizadorReclamos        │                                              │
+│  │  ✅ Facturación Excesiva  │                                              │
+│  │  ⚠️  Otras tipologías     │                                              │
+│  │  - Usa: Manual SEC        │                                              │
+│  │  - Usa: Resolución 1952   │                                              │
+│  └───────────┬───────────────┘                                              │
+│              │                                                                │
+│              ↓ (análisis)                                                     │
+│  ┌──────────────────────────┐                                              │
+│  │ GeneradorExpediente       │                                              │
+│  │  - Estructura expediente  │                                              │
+│  │  - Genera medios probat. │                                              │
+│  └───────────┬───────────────┘                                              │
+│              │                                                                │
+│              ↓                                                                │
+│  ┌──────────────────────────┐                                              │
+│  │ EvaluadorCumplimiento     │                                              │
+│  │  - Plazos                 │                                              │
+│  │  - Medios probatorios     │                                              │
+│  │  - Consistencia           │                                              │
+│  │  - Respuesta empresa      │                                              │
+│  └───────────────────────────┘                                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MÓDULO 3: FICHA TÉCNICA Y CHECKLIST                                         │
+│ (modulos/ficha_tecnica_checklist/)                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────────────────┐                                              │
+│  │ GeneradorInforme         │                                              │
+│  │  - Resumen ejecutivo     │                                              │
+│  │  - Explicación análisis  │                                              │
+│  │  - Justificación técnica │                                              │
+│  └───────────┬──────────────┘                                              │
+│              │                                                                │
+│  ┌───────────┴──────────────┐                                              │
+│  │                          │                                               │
+│  ↓                          ↓                                               │
+│  ┌──────────────────────────┐  ┌──────────────────────────┐                │
+│  │ GeneradorInstrucciones    │  │ GeneradorFicha           │                │
+│  │  - Acciones inmediatas   │  │  - PDF/HTML              │                │
+│  │  - Pasos siguientes      │  │  - Gráficos (matplotlib)│                │
+│  │  - Recomendaciones       │  │  - Templates HTML        │                │
+│  └──────────────────────────┘  └──────────────────────────┘                │
+│                                                                             │
+│  ┌──────────────────────────┐                                              │
+│  │ ChecklistCumplimiento    │                                              │
+│  │  - Items verificables   │                                              │
+│  │  - Estado por ítem       │                                              │
+│  │  - PDF/HTML/JSON         │                                              │
+│  └──────────────────────────┘                                              │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ MÓDULO 4: UTILIDADES (modulos/utils/)                                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                     │
+│  │    Config    │  │    Logger    │  │  BaseDatos   │                     │
+│  │  - YAML      │  │  - Console   │  │  - SQLite    │                     │
+│  │  - Rutas     │  │  - Archivo   │  │  - Tablas    │                     │
+│  └──────────────┘  └──────────────┘  └──────────────┘                     │
+│       │                  │                  │                               │
+│       └──────────────────┴──────────────────┘                               │
+│                    (usado por todos)                                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CAPA 3: SALIDA                                    │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    [Expediente]          [Ficha Técnica]        [Checklist]          [Informe]
+    └─ JSON/TXT           └─ PDF/HTML            └─ PDF/HTML/JSON     └─ JSON
+    
+    [Instrucciones]       [Base de Datos]        [Logs]
+    └─ JSON               └─ SQLite               └─ sec_reclamos.log
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            FLUJO COMPLETO (10 PASOS)
+═══════════════════════════════════════════════════════════════════════════════
+
+[ENTRADA] Reclamo JSON
+    │
+    ├─→ [PASO 1] Obtener Boletas
+    │      │
+    │      ├─→ ScraperFactory → Scraper Específico
+    │      ├─→ Login → Obtener Boletas
+    │      ├─→ ExtractorDatos → Parsear
+    │      ├─→ ValidadorBoletas → Validar
+    │      └─→ BaseDatos → Guardar
+    │
+    ├─→ [PASO 2] Clasificar Tipología
+    │      └─→ ClasificadorTipologias
+    │             └─→ Usa: Manual SEC
+    │
+    ├─→ [PASO 3] Analizar Reclamo
+    │      └─→ AnalizadorReclamos
+    │             ├─→ Usa: Boletas
+    │             └─→ Usa: Manual SEC / Resolución 1952
+    │
+    ├─→ [PASO 4] Generar Expediente
+    │      └─→ GeneradorExpediente
+    │
+    ├─→ [PASO 5] Evaluar Cumplimiento
+    │      └─→ EvaluadorCumplimiento
+    │
+    ├─→ [PASO 6] Generar Informe
+    │      └─→ GeneradorInforme
+    │
+    ├─→ [PASO 7] Generar Instrucciones
+    │      └─→ GeneradorInstrucciones
+    │
+    ├─→ [PASO 8] Generar Ficha Técnica
+    │      └─→ GeneradorFicha
+    │             ├─→ Usa: GeneradorInforme
+    │             ├─→ Usa: GeneradorInstrucciones
+    │             └─→ Usa: Templates HTML
+    │
+    ├─→ [PASO 9] Generar Checklist
+    │      └─→ ChecklistCumplimiento
+    │
+    └─→ [PASO 10] Guardar Resultados
+           └─→ BaseDatos
+
+[SALIDA] Documentos generados
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            CONEXIONES PRINCIPALES
+═══════════════════════════════════════════════════════════════════════════════
+
+main.py ──────────────→ Todos los módulos (orquestación)
+
+Obtención Boletas ─────→ BaseDatos (guardar boletas)
+
+Clasificador ──────────→ Analizador (tipología → análisis)
+
+Analizador ────────────→ GeneradorExpediente (análisis → expediente)
+
+EvaluadorCumplimiento ─→ GeneradorExpediente (cumplimiento → expediente)
+
+GeneradorFicha ────────→ GeneradorInforme + GeneradorInstrucciones
+
+Todos ─────────────────→ Logger (registro de eventos)
+
+Todos ─────────────────→ Config (configuración)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            RECURSOS EXTERNOS
+═══════════════════════════════════════════════════════════════════════════════
+
+docs/manual_reclamos_2025.json ──→ ClasificadorTipologias, AnalizadorReclamos
+docs/resolucion_exenta_1952.json ─→ AnalizadorReclamos (CNR)
+templates/*.html ────────────────→ GeneradorFicha, ChecklistCumplimiento
+Portales Web ────────────────────→ Scrapers (Enel, CGE, Saesa, etc.)
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                            ESTADO DE IMPLEMENTACIÓN
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ COMPLETO:
+  - Estructura base del sistema
+  - Obtención de boletas (Enel)
+  - Clasificación de tipologías
+  - Análisis de Facturación Excesiva
+  - Evaluación de cumplimiento
+  - Generación de expedientes
+  - Ficha técnica completa
+  - Checklist de cumplimiento
+  - Informe ejecutivo
+  - Instrucciones automáticas
+
+⚠️  PARCIAL:
+  - Análisis de otras tipologías (placeholders)
+  - Scrapers de otras distribuidoras
+
+❌ PENDIENTE:
+  - Integración con PESEC
+  - Automatización/scheduler
+  - Tests exhaustivos
+
