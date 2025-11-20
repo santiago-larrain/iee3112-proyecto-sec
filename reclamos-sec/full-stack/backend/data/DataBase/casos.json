@@ -1,0 +1,444 @@
+[
+  {
+    "id": 1,
+    "case_id": "230125-000509",
+    "persona_id": 1,
+    "suministro_id": 1,
+    "empresa": "Grupo Saesa",
+    "materia": "Reclamo SEC",
+    "monto_disputa": null,
+    "fecha_ingreso": "2023-01-25",
+    "estado": "CERRADO",
+    "edn": {
+      "compilation_metadata": {
+        "case_id": "230125-000509",
+        "processing_timestamp": "2025-11-20T06:00:49.251482+00:00",
+        "status": "COMPLETED"
+      },
+      "unified_context": {
+        "rut_client": "RUT-230125-000509",
+        "client_name": "Cliente 230125-000509",
+        "service_nis": "10867348",
+        "address_standard": "—",
+        "commune": "Puerto Montt",
+        "email": null,
+        "phone": null
+      },
+      "document_inventory": {
+        "level_1_critical": [
+          {
+            "type": "TABLA_CALCULO",
+            "file_id": "230125-000509-1",
+            "original_name": "Cálculo.pdf",
+            "standardized_name": "TABLA_CALCULO - Cálculo.pdf",
+            "file_path": "Cálculo.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/230125-000509/Cálculo.pdf"
+          },
+          {
+            "type": "TABLA_CALCULO",
+            "file_id": "230125-000509-2",
+            "original_name": "Informe CNR  Serv  10867348(2).pdf",
+            "standardized_name": "TABLA_CALCULO - Informe CNR  Serv  10867348(2).pdf",
+            "file_path": "Informe CNR  Serv  10867348(2).pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/230125-000509/Informe CNR  Serv  10867348(2).pdf"
+          },
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "230125-000509-3",
+            "original_name": "Respuesta Reclamo 2642280.pdf",
+            "standardized_name": "CARTA_RESPUESTA - Respuesta Reclamo 2642280.pdf",
+            "file_path": "Respuesta Reclamo 2642280.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/230125-000509/Respuesta Reclamo 2642280.pdf"
+          },
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "230125-000509-4",
+            "original_name": "Respuesta Reclamo 7823459.pdf",
+            "standardized_name": "CARTA_RESPUESTA - Respuesta Reclamo 7823459.pdf",
+            "file_path": "Respuesta Reclamo 7823459.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/230125-000509/Respuesta Reclamo 7823459.pdf"
+          }
+        ],
+        "level_2_supporting": [],
+        "level_0_missing": []
+      },
+      "materia": "Reclamo SEC",
+      "monto_disputa": null,
+      "empresa": "Grupo Saesa",
+      "fecha_ingreso": "2023-01-25",
+      "alertas": []
+    },
+    "fecha_cierre": "2025-11-20T07:31:12.473Z",
+    "resolucion": {
+      "content": "INSTRUCCIÓN A LA EMPRESA Grupo Saesa\n\nCaso SEC: 230125-000509\nCliente: Cliente 230125-000509\nRUT: RUT-230125-000509\nMateria: Reclamo SEC\n\nCONSIDERANDO:\n1. Que se ha recibido el reclamo del cliente indicado.\n2. Que tras el análisis de la documentación presentada, se han detectado las siguientes irregularidades:\n\n- Se requiere revisión adicional de la documentación presentada.\n\nPOR TANTO:\nSe instruye a la empresa Grupo Saesa a revisar y corregir las irregularidades señaladas, conforme a lo establecido en la normativa vigente, en particular lo dispuesto en el Decreto con Fuerza de Ley N°1/2006 del Ministerio de Economía, Fomento y Reconstrucción, que fija el texto refundido, coordinado y sistematizado de la Ley General de Servicios Eléctricos, y sus normas complementarias.\n\nLa empresa deberá informar a esta Superintendencia, dentro del plazo de 15 días hábiles, las medidas adoptadas para subsanar las irregularidades detectadas.\n",
+      "fecha_firma": "2025-11-20T07:31:12.473Z"
+    }
+  },
+  {
+    "id": 2,
+    "case_id": "231220-000557",
+    "persona_id": 2,
+    "suministro_id": 2,
+    "empresa": null,
+    "materia": "Reclamo SEC",
+    "monto_disputa": null,
+    "fecha_ingreso": "2023-12-20",
+    "estado": "PENDIENTE",
+    "edn": {
+      "compilation_metadata": {
+        "case_id": "231220-000557",
+        "processing_timestamp": "2025-11-20T06:00:50.093698+00:00",
+        "status": "COMPLETED"
+      },
+      "unified_context": {
+        "rut_client": "RUT-231220-000557",
+        "client_name": "Cliente 231220-000557",
+        "service_nis": "5854164",
+        "address_standard": null,
+        "commune": "Desconocida",
+        "email": null,
+        "phone": null
+      },
+      "document_inventory": {
+        "level_1_critical": [
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "231220-000557-2",
+            "original_name": "RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023.docx",
+            "standardized_name": "CARTA_RESPUESTA - RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023.docx",
+            "file_path": "RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023.docx",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023.docx"
+          },
+          {
+            "type": "TABLA_CALCULO",
+            "file_id": "231220-000557-4",
+            "original_name": "1982860-Calculo_2023_9677.pdf",
+            "standardized_name": "TABLA_CALCULO - 1982860-Calculo_2023_9677.pdf",
+            "file_path": "1982860-probatorios/1982860-Calculo_2023_9677.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-probatorios/1982860-Calculo_2023_9677.pdf"
+          }
+        ],
+        "level_2_supporting": [
+          {
+            "type": "OTROS",
+            "file_id": "231220-000557-1",
+            "original_name": "1982860-SI.pdf",
+            "standardized_name": "OTROS - 1982860-SI.pdf",
+            "file_path": "1982860-SI.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-SI.pdf"
+          },
+          {
+            "type": "OTROS",
+            "file_id": "231220-000557-3",
+            "original_name": "1982860-1966146-T.pdf",
+            "standardized_name": "OTROS - 1982860-1966146-T.pdf",
+            "file_path": "1982860-probatorios/1982860-1966146-T.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-probatorios/1982860-1966146-T.pdf"
+          },
+          {
+            "type": "OTROS",
+            "file_id": "231220-000557-5",
+            "original_name": "1982860-Cam_2023_9677.pdf",
+            "standardized_name": "OTROS - 1982860-Cam_2023_9677.pdf",
+            "file_path": "1982860-probatorios/1982860-Cam_2023_9677.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-probatorios/1982860-Cam_2023_9677.pdf"
+          },
+          {
+            "type": "OTROS",
+            "file_id": "231220-000557-6",
+            "original_name": "1982860-Caso585416_4.pdf",
+            "standardized_name": "OTROS - 1982860-Caso585416_4.pdf",
+            "file_path": "1982860-probatorios/1982860-Caso585416_4.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-probatorios/1982860-Caso585416_4.pdf"
+          },
+          {
+            "type": "GRAFICO_CONSUMO",
+            "file_id": "231220-000557-7",
+            "original_name": "1982860-CONSUMOS.pdf",
+            "standardized_name": "GRAFICO_CONSUMO - 1982860-CONSUMOS.pdf",
+            "file_path": "1982860-probatorios/1982860-CONSUMOS.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-probatorios/1982860-CONSUMOS.pdf"
+          },
+          {
+            "type": "EVIDENCIA_FOTOGRAFICA",
+            "file_id": "231220-000557-8",
+            "original_name": "1982860-Fotografias_2023_9677.pdf",
+            "standardized_name": "EVIDENCIA_FOTOGRAFICA - 1982860-Fotografias_2023_9677.pdf",
+            "file_path": "1982860-probatorios/1982860-Fotografias_2023_9677.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/231220-000557/1982860-probatorios/1982860-Fotografias_2023_9677.pdf"
+          }
+        ],
+        "level_0_missing": []
+      },
+      "materia": "Reclamo SEC",
+      "monto_disputa": null,
+      "empresa": null,
+      "fecha_ingreso": "2023-12-20",
+      "alertas": []
+    }
+  },
+  {
+    "id": 3,
+    "case_id": "240108-000010",
+    "persona_id": 3,
+    "suministro_id": 3,
+    "empresa": null,
+    "materia": "Reclamo SEC",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-08",
+    "estado": "PENDIENTE",
+    "edn": {
+      "compilation_metadata": {
+        "case_id": "240108-000010",
+        "processing_timestamp": "2025-11-20T06:00:51.178370+00:00",
+        "status": "COMPLETED"
+      },
+      "unified_context": {
+        "rut_client": "RUT-240108-000010",
+        "client_name": "Cliente 240108-000010",
+        "service_nis": "608749",
+        "address_standard": null,
+        "commune": "Desconocida",
+        "email": null,
+        "phone": null
+      },
+      "document_inventory": {
+        "level_1_critical": [
+          {
+            "type": "TABLA_CALCULO",
+            "file_id": "240108-000010-2",
+            "original_name": "Calculo_CNR_N°_608749.pdf",
+            "standardized_name": "TABLA_CALCULO - Calculo_CNR_N°_608749.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Calculo_CNR_N°_608749.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Calculo_CNR_N°_608749.pdf"
+          },
+          {
+            "type": "ORDEN_TRABAJO",
+            "file_id": "240108-000010-9",
+            "original_name": "Orden de trabajo N°197803311 12-04.2023.pdf",
+            "standardized_name": "ORDEN_TRABAJO - Orden de trabajo N°197803311 12-04.2023.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Orden de trabajo N°197803311 12-04.2023.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Orden de trabajo N°197803311 12-04.2023.pdf"
+          },
+          {
+            "type": "TABLA_CALCULO",
+            "file_id": "240108-000010-10",
+            "original_name": "Periodo_CNR_(Quiebre_Consumo)_N°_608749.pdf",
+            "standardized_name": "TABLA_CALCULO - Periodo_CNR_(Quiebre_Consumo)_N°_608749.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Periodo_CNR_(Quiebre_Consumo)_N°_608749.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Periodo_CNR_(Quiebre_Consumo)_N°_608749.pdf"
+          },
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "240108-000010-12",
+            "original_name": "Respuesta_Reclamo_N°117350430.-.pdf",
+            "standardized_name": "CARTA_RESPUESTA - Respuesta_Reclamo_N°117350430.-.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Respuesta_Reclamo_N°117350430.-.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Respuesta_Reclamo_N°117350430.-.pdf"
+          }
+        ],
+        "level_2_supporting": [
+          {
+            "type": "OTROS",
+            "file_id": "240108-000010-1",
+            "original_name": "ANEXO N°1.pdf",
+            "standardized_name": "OTROS - ANEXO N°1.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/ANEXO N°1.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/ANEXO N°1.pdf"
+          },
+          {
+            "type": "OTROS",
+            "file_id": "240108-000010-3",
+            "original_name": "Complemento caso SEC N°1991990.pdf",
+            "standardized_name": "OTROS - Complemento caso SEC N°1991990.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Complemento caso SEC N°1991990.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Complemento caso SEC N°1991990.pdf"
+          },
+          {
+            "type": "EVIDENCIA_FOTOGRAFICA",
+            "file_id": "240108-000010-4",
+            "original_name": "F_Fachada.jpg",
+            "standardized_name": "EVIDENCIA_FOTOGRAFICA - F_Fachada.jpg",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/F_Fachada.jpg",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/F_Fachada.jpg"
+          },
+          {
+            "type": "INFORME_CNR",
+            "file_id": "240108-000010-5",
+            "original_name": "Informe Instalación Equipo Medida en Acometida Cliente.pdf",
+            "standardized_name": "INFORME_CNR - Informe Instalación Equipo Medida en Acometida Cliente.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Informe Instalación Equipo Medida en Acometida Cliente.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Informe Instalación Equipo Medida en Acometida Cliente.pdf"
+          },
+          {
+            "type": "EVIDENCIA_FOTOGRAFICA",
+            "file_id": "240108-000010-6",
+            "original_name": "Notificación no permite cambio de medidor 12.04.2023-1.jpg",
+            "standardized_name": "EVIDENCIA_FOTOGRAFICA - Notificación no permite cambio de medidor 12.04.2023-1.jpg",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Notificación no permite cambio de medidor 12.04.2023-1.jpg",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Notificación no permite cambio de medidor 12.04.2023-1.jpg"
+          },
+          {
+            "type": "EVIDENCIA_FOTOGRAFICA",
+            "file_id": "240108-000010-7",
+            "original_name": "Notificación No Permite el cambio de medidor 12.04.2023-2.jpg",
+            "standardized_name": "EVIDENCIA_FOTOGRAFICA - Notificación No Permite el cambio de medidor 12.04.2023-2.jpg",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Notificación No Permite el cambio de medidor 12.04.2023-2.jpg",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Notificación No Permite el cambio de medidor 12.04.2023-2.jpg"
+          },
+          {
+            "type": "EVIDENCIA_FOTOGRAFICA",
+            "file_id": "240108-000010-8",
+            "original_name": "Notificación_12-04-2024.jpg",
+            "standardized_name": "EVIDENCIA_FOTOGRAFICA - Notificación_12-04-2024.jpg",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Notificación_12-04-2024.jpg",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Notificación_12-04-2024.jpg"
+          },
+          {
+            "type": "OTROS",
+            "file_id": "240108-000010-11",
+            "original_name": "Reclamo_ingresado_por_cliente_N°_117350430.pdf",
+            "standardized_name": "OTROS - Reclamo_ingresado_por_cliente_N°_117350430.pdf",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Reclamo_ingresado_por_cliente_N°_117350430.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Reclamo_ingresado_por_cliente_N°_117350430.pdf"
+          },
+          {
+            "type": "EVIDENCIA_FOTOGRAFICA",
+            "file_id": "240108-000010-13",
+            "original_name": "Resultado de equpo contrastador -84%.jpg",
+            "standardized_name": "EVIDENCIA_FOTOGRAFICA - Resultado de equpo contrastador -84%.jpg",
+            "file_path": "CASO SIAC N°1991990 NIS 608749/Resultado de equpo contrastador -84%.jpg",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240108-000010/CASO SIAC N°1991990 NIS 608749/Resultado de equpo contrastador -84%.jpg"
+          }
+        ],
+        "level_0_missing": []
+      },
+      "materia": "Reclamo SEC",
+      "monto_disputa": null,
+      "empresa": null,
+      "fecha_ingreso": "2024-01-08",
+      "alertas": []
+    }
+  },
+  {
+    "id": 4,
+    "case_id": "240110-000679",
+    "persona_id": 4,
+    "suministro_id": 4,
+    "empresa": null,
+    "materia": "Reclamo SEC",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-10",
+    "estado": "PENDIENTE",
+    "edn": {
+      "compilation_metadata": {
+        "case_id": "240110-000679",
+        "processing_timestamp": "2025-11-20T06:00:51.480977+00:00",
+        "status": "COMPLETED"
+      },
+      "unified_context": {
+        "rut_client": "RUT-240110-000679",
+        "client_name": "Cliente 240110-000679",
+        "service_nis": "4421099",
+        "address_standard": null,
+        "commune": "Desconocida",
+        "email": null,
+        "phone": null
+      },
+      "document_inventory": {
+        "level_1_critical": [
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "240110-000679-2",
+            "original_name": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024.docx",
+            "standardized_name": "CARTA_RESPUESTA - RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024.docx",
+            "file_path": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024.docx",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240110-000679/RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024.docx"
+          },
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "240110-000679-3",
+            "original_name": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024.docx",
+            "standardized_name": "CARTA_RESPUESTA - RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024.docx",
+            "file_path": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024.docx",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240110-000679/RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024.docx"
+          }
+        ],
+        "level_2_supporting": [
+          {
+            "type": "OTROS",
+            "file_id": "240110-000679-1",
+            "original_name": "Caso SEC N° 1994324, cliente Nº 4421.pdf",
+            "standardized_name": "OTROS - Caso SEC N° 1994324, cliente Nº 4421.pdf",
+            "file_path": "Caso SEC N° 1994324, cliente Nº 4421.pdf",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240110-000679/Caso SEC N° 1994324, cliente Nº 4421.pdf"
+          }
+        ],
+        "level_0_missing": [
+          {
+            "required_type": "TABLA_CALCULO",
+            "alert_level": "HIGH",
+            "description": "No se detectó tabla de cálculo"
+          }
+        ]
+      },
+      "materia": "Reclamo SEC",
+      "monto_disputa": null,
+      "empresa": null,
+      "fecha_ingreso": "2024-01-10",
+      "alertas": []
+    }
+  },
+  {
+    "id": 5,
+    "case_id": "240125-000595",
+    "persona_id": 5,
+    "suministro_id": 5,
+    "empresa": null,
+    "materia": "Reclamo SEC",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-25",
+    "estado": "PENDIENTE",
+    "edn": {
+      "compilation_metadata": {
+        "case_id": "240125-000595",
+        "processing_timestamp": "2025-11-20T06:00:51.639921+00:00",
+        "status": "COMPLETED"
+      },
+      "unified_context": {
+        "rut_client": "RUT-240125-000595",
+        "client_name": "Cliente 240125-000595",
+        "service_nis": "5581125",
+        "address_standard": null,
+        "commune": "Desconocida",
+        "email": null,
+        "phone": null
+      },
+      "document_inventory": {
+        "level_1_critical": [
+          {
+            "type": "CARTA_RESPUESTA",
+            "file_id": "240125-000595-1",
+            "original_name": "RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
+            "standardized_name": "CARTA_RESPUESTA - RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
+            "file_path": "RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
+            "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240125-000595/RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx"
+          }
+        ],
+        "level_2_supporting": [],
+        "level_0_missing": [
+          {
+            "required_type": "TABLA_CALCULO",
+            "alert_level": "HIGH",
+            "description": "No se detectó tabla de cálculo"
+          }
+        ]
+      },
+      "materia": "Reclamo SEC",
+      "monto_disputa": null,
+      "empresa": null,
+      "fecha_ingreso": "2024-01-25",
+      "alertas": []
+    }
+  }
+]

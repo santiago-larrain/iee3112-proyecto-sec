@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "rut": "RUT-230125-000509",
+    "nombre": "Cliente 230125-000509",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 2,
+    "rut": "RUT-231220-000557",
+    "nombre": "Cliente 231220-000557",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 3,
+    "rut": "RUT-240108-000010",
+    "nombre": "Cliente 240108-000010",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 4,
+    "rut": "RUT-240110-000679",
+    "nombre": "Cliente 240110-000679",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 5,
+    "rut": "RUT-240125-000595",
+    "nombre": "Cliente 240125-000595",
+    "email": null,
+    "telefono": null
+  }
+]
