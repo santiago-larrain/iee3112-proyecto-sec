@@ -19,7 +19,7 @@ os.chdir(backend_dir_str)
 
 # Ahora podemos importar los módulos
 try:
-    from ingestion import DocumentProcessor
+    from engine.omc import DocumentProcessor
     from database import DBManager
 except ImportError as e:
     print(f"Error de importación: {e}")

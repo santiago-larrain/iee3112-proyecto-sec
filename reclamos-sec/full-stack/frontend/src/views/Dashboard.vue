@@ -1,131 +1,118 @@
 <template>
-  <div class="dashboard">
-    <h2>Panel de Reclamos</h2>
+  <div class="dashboard-container">
+    <!-- Sidebar -->
+    <Sidebar
+      :total-casos="totalCasos"
+      :pendientes="pendientes"
+      :resueltos="resueltos"
+      :cerrados="cerrados"
+    />
     
-    <!-- Tarjetas de Resumen -->
-    <div class="summary-cards">
-      <div class="summary-card">
-        <div class="card-icon total">📊</div>
-        <div class="card-content">
-          <h3>{{ totalCasos }}</h3>
-          <p>Total Casos</p>
+    <!-- Main Content -->
+    <div class="main-content">
+      <h2>Panel de Reclamos</h2>
+      
+      <!-- Fixed Search and Filter Bar -->
+      <div class="fixed-controls-bar">
+        <div class="controls-container">
+          <SearchBar @search="onSearch" />
+          <div class="filter-buttons">
+            <FilterButton 
+              label="Estado" 
+              :options="estadoOptions" 
+              :selected="filtroEstado"
+              @select="onEstadoFilter"
+            />
+            <FilterButton 
+              label="Caso" 
+              :options="tipoCasoOptions" 
+              :selected="filtroTipoCaso"
+              @select="onTipoCasoFilter"
+            />
+          </div>
         </div>
       </div>
-      <div class="summary-card">
-        <div class="card-icon pending">⏳</div>
-        <div class="card-content">
-          <h3>{{ pendientes }}</h3>
-          <p>Pendientes</p>
+      
+      <!-- Cases Table -->
+      <div class="table-container" v-if="!loading">
+        <CasesTable
+          :casos="casos"
+          :sort-by="sortBy"
+          :sort-order="sortOrder"
+          @sort="onSort"
+          @open-case="abrirCaso"
+        />
+        <div class="pagination-info">
+          Mostrando {{ casos.length }} de {{ totalCasos }} casos
         </div>
       </div>
-      <div class="summary-card">
-        <div class="card-icon resolved">✅</div>
-        <div class="card-content">
-          <h3>{{ resueltos }}</h3>
-          <p>Resueltos</p>
-        </div>
+      
+      <div v-if="loading" class="loading">
+        Cargando casos...
       </div>
-      <div class="summary-card">
-        <div class="card-icon closed">🔒</div>
-        <div class="card-content">
-          <h3>{{ cerrados }}</h3>
-          <p>Cerrados</p>
-        </div>
+      
+      <div v-if="error" class="error">
+        {{ error }}
       </div>
-    </div>
-
-    <!-- Filtros -->
-    <div class="filters">
-      <select v-model="filtroEstado" @change="aplicarFiltros">
-        <option value="">Todos los estados</option>
-        <option value="PENDIENTE">Pendientes</option>
-        <option value="EN_REVISION">En Revisión</option>
-        <option value="RESUELTO">Resueltos</option>
-        <option value="CERRADO">Cerrados</option>
-      </select>
-    </div>
-
-    <!-- Tabla de Casos -->
-    <div class="casos-table-container" v-if="!loading">
-      <table class="casos-table">
-        <thead>
-          <tr>
-            <th>ID Caso</th>
-            <th>Cliente</th>
-            <th>RUT</th>
-            <th>Materia</th>
-            <th>Monto</th>
-            <th>Empresa</th>
-            <th>Estado</th>
-            <th>Fecha Ingreso</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="caso in casosFiltrados" :key="caso.case_id" class="caso-row">
-            <td>{{ caso.case_id }}</td>
-            <td>{{ caso.client_name }}</td>
-            <td>{{ caso.rut_client }}</td>
-            <td>{{ caso.materia }}</td>
-            <td>${{ caso.monto_disputa.toLocaleString('es-CL') }}</td>
-            <td>{{ caso.empresa }}</td>
-            <td>
-              <span :class="['status-badge', getStatusClass(caso.status)]">
-                {{ caso.status }}
-              </span>
-            </td>
-            <td>{{ caso.fecha_ingreso }}</td>
-            <td>
-              <button @click="abrirCaso(caso.case_id)" class="btn-primary">
-                Abrir
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div v-if="loading" class="loading">
-      Cargando casos...
-    </div>
-
-    <div v-if="error" class="error">
-      {{ error }}
     </div>
   </div>
 </template>
 
 <script>
 import { casosAPI } from '../services/api'
+import Sidebar from '../components/Sidebar.vue'
+import SearchBar from '../components/SearchBar.vue'
+import FilterButton from '../components/FilterButton.vue'
+import CasesTable from '../components/CasesTable.vue'
 
 export default {
   name: 'Dashboard',
+  components: {
+    Sidebar,
+    SearchBar,
+    FilterButton,
+    CasesTable
+  },
   data() {
     return {
       casos: [],
+      allCasos: [], // Todos los casos sin paginación (para estadísticas)
       loading: true,
       error: null,
-      filtroEstado: ''
+      searchQuery: '',
+      filtroEstado: '',
+      filtroTipoCaso: '',
+      sortBy: null,
+      sortOrder: 'asc',
+      page: 1,
+      pageSize: 100, // Parametrizable
+      estadoOptions: [
+        { value: '', label: 'Todos' },
+        { value: 'PENDIENTE', label: 'Pendientes' },
+        { value: 'CERRADO', label: 'Cerrados' }
+      ],
+      tipoCasoOptions: [
+        { value: '', label: 'Todos' },
+        { value: 'CNR', label: 'CNR' },
+        { value: 'CORTE_SUMINISTRO', label: 'Corte Suministro' },
+        { value: 'DAÑO_EQUIPOS', label: 'Daño Equipos' },
+        { value: 'ATENCION_COMERCIAL', label: 'Atención Comercial' },
+        { value: 'OTROS', label: 'Otros' }
+      ]
     }
   },
   computed: {
     totalCasos() {
-      return this.casos.length
+      return this.allCasos.length
     },
     pendientes() {
-      return this.casos.filter(c => c.status === 'PENDIENTE').length
+      return this.allCasos.filter(c => c.status === 'PENDIENTE').length
     },
     resueltos() {
-      return this.casos.filter(c => c.status === 'RESUELTO').length
+      return this.allCasos.filter(c => c.status === 'RESUELTO').length
     },
     cerrados() {
-      return this.casos.filter(c => c.status === 'CERRADO').length
-    },
-    casosFiltrados() {
-      if (!this.filtroEstado) {
-        return this.casos
-      }
-      return this.casos.filter(c => c.status === this.filtroEstado)
+      return this.allCasos.filter(c => c.status === 'CERRADO').length
     }
   },
   mounted() {
@@ -136,185 +123,131 @@ export default {
       this.loading = true
       this.error = null
       try {
-        const response = await casosAPI.getCasos()
-        this.casos = response.data
+        // Cargar todos los casos sin filtros para estadísticas (una sola vez al inicio)
+        // Usar page_size máximo permitido (1000) en lugar de 10000
+        if (this.allCasos.length === 0) {
+          try {
+            const allResponse = await casosAPI.getCasos('', '', '', null, 'asc', 1, 1000)
+            this.allCasos = allResponse.data || []
+          } catch (err) {
+            console.warn('Error cargando todos los casos para estadísticas:', err)
+            this.allCasos = []
+          }
+        }
+        
+        // Cargar casos paginados con filtros para la tabla
+        const response = await casosAPI.getCasos(
+          this.searchQuery || '',
+          this.filtroTipoCaso || '',
+          this.filtroEstado || '',
+          this.sortBy || null,
+          this.sortOrder || 'asc',
+          this.page || 1,
+          this.pageSize || 100
+        )
+        this.casos = response.data || []
       } catch (err) {
         this.error = 'Error al cargar casos: ' + (err.message || 'Error desconocido')
-        console.error(err)
+        console.error('Error completo:', err)
+        console.error('Response:', err.response)
+        this.casos = []
       } finally {
         this.loading = false
       }
     },
+    async onSearch(query) {
+      this.searchQuery = query
+      this.page = 1 // Resetear a primera página
+      await this.cargarCasos()
+    },
+    async onEstadoFilter(value) {
+      this.filtroEstado = value
+      this.page = 1
+      await this.cargarCasos()
+    },
+    async onTipoCasoFilter(value) {
+      this.filtroTipoCaso = value
+      this.page = 1
+      await this.cargarCasos()
+    },
+    async onSort(column) {
+      if (this.sortBy === column) {
+        // Si ya está ordenado por esta columna, cambiar el orden
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortBy = column
+        this.sortOrder = 'asc'
+      }
+      await this.cargarCasos()
+    },
     abrirCaso(caseId) {
       this.$router.push(`/caso/${caseId}`)
-    },
-    getStatusClass(status) {
-      const classes = {
-        'PENDIENTE': 'status-pending',
-        'EN_REVISION': 'status-review',
-        'RESUELTO': 'status-resolved',
-        'CERRADO': 'status-closed'
-      }
-      return classes[status] || ''
-    },
-    aplicarFiltros() {
-      // Los filtros se aplican automáticamente por computed
     }
   }
 }
 </script>
 
 <style scoped>
-.dashboard {
-  width: 100%;
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
 }
 
-.dashboard h2 {
+.main-content {
+  flex: 1;
+  margin-left: 300px;
+  padding: 2rem;
+  background: #fafafa;
+  padding-top: 140px; /* Espacio para controles fijos */
+}
+
+.main-content h2 {
   margin-bottom: 2rem;
   color: #333;
   font-size: 2rem;
+  position: sticky;
+  top: 70px; /* Debajo del header */
+  background: #fafafa;
+  padding: 1rem 0;
+  z-index: 5;
 }
 
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
-}
-
-.summary-card {
+.fixed-controls-bar {
+  position: fixed;
+  top: 70px; /* Debajo del header */
+  left: 300px; /* Después del sidebar */
+  right: 0;
   background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
+  padding: 1rem 2rem;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.controls-container {
   display: flex;
   align-items: center;
   gap: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
-.card-icon {
-  font-size: 2.5rem;
-  width: 60px;
-  height: 60px;
+.filter-buttons {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 0.5rem;
+}
+
+.table-container {
+  margin-top: 1rem;
+}
+
+.pagination-info {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: white;
   border-radius: 8px;
-}
-
-.card-icon.total {
-  background: #e3f2fd;
-}
-
-.card-icon.pending {
-  background: #fff3e0;
-}
-
-.card-icon.resolved {
-  background: #e8f5e9;
-}
-
-.card-icon.closed {
-  background: #f3e5f5;
-}
-
-.card-content h3 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 0.25rem;
-}
-
-.card-content p {
+  text-align: center;
   color: #666;
   font-size: 0.9rem;
-}
-
-.filters {
-  margin-bottom: 1.5rem;
-}
-
-.filters select {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  background: white;
-}
-
-.casos-table-container {
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.casos-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.casos-table thead {
-  background: #f5f5f5;
-}
-
-.casos-table th {
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #333;
-  border-bottom: 2px solid #ddd;
-}
-
-.casos-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #eee;
-}
-
-.caso-row:hover {
-  background: #f9f9f9;
-}
-
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
-
-.status-pending {
-  background: #fff3e0;
-  color: #f57c00;
-}
-
-.status-review {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.status-resolved {
-  background: #e8f5e9;
-  color: #388e3c;
-}
-
-.status-closed {
-  background: #f3e5f5;
-  color: #7b1fa2;
-}
-
-.btn-primary {
-  background: #667eea;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: background 0.2s;
-}
-
-.btn-primary:hover {
-  background: #5568d3;
 }
 
 .loading, .error {
@@ -330,4 +263,3 @@ export default {
   background: #ffebee;
 }
 </style>
-

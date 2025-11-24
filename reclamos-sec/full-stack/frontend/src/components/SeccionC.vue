@@ -43,39 +43,20 @@
     </div>
 
     <!-- Grupo C: Análisis Técnico-Jurídico -->
-    <div class="checklist-group" v-if="checklist?.group_c_analisis">
+    <div class="checklist-group" v-if="checklist?.group_c_analisis?.length > 0">
       <h4 class="group-title">
         <span class="group-icon">⚖️</span>
         Grupo C: Etapa de Análisis Técnico-Jurídico (Fondo del Asunto)
       </h4>
       <p class="group-description">Cruzamiento de datos para validar la legalidad del cobro</p>
-      
-      <!-- Sub-checklist C.1: Acreditación del Hecho -->
-      <div class="sub-checklist" v-if="checklist.group_c_analisis.c1_acreditacion_hecho?.length > 0">
-        <h5 class="sub-checklist-title">C.1. Acreditación del Hecho (El Fraude)</h5>
-        <div class="checklist-items">
-          <ChecklistItem
-            v-for="item in checklist.group_c_analisis.c1_acreditacion_hecho"
-            :key="item.id"
-            :item="item"
-            :case-id="caseId"
-            @validated="onItemValidated"
-          />
-        </div>
-      </div>
-
-      <!-- Sub-checklist C.2: Legalidad del Cobro -->
-      <div class="sub-checklist" v-if="checklist.group_c_analisis.c2_legalidad_cobro?.length > 0">
-        <h5 class="sub-checklist-title">C.2. Legalidad del Cobro (Las Matemáticas)</h5>
-        <div class="checklist-items">
-          <ChecklistItem
-            v-for="item in checklist.group_c_analisis.c2_legalidad_cobro"
-            :key="item.id"
-            :item="item"
-            :case-id="caseId"
-            @validated="onItemValidated"
-          />
-        </div>
+      <div class="checklist-items">
+        <ChecklistItem
+          v-for="item in checklist.group_c_analisis"
+          :key="item.id"
+          :item="item"
+          :case-id="caseId"
+          @validated="onItemValidated"
+        />
       </div>
     </div>
   </div>
@@ -112,9 +93,12 @@ export default {
       if (!this.checklist) return false
       const hasA = this.checklist.group_a_admisibilidad?.length > 0
       const hasB = this.checklist.group_b_instruccion?.length > 0
+      // Nueva estructura: group_c_analisis es una lista directa
+      const hasC = Array.isArray(this.checklist.group_c_analisis) && this.checklist.group_c_analisis.length > 0
+      // Compatibilidad con estructura antigua
       const hasC1 = this.checklist.group_c_analisis?.c1_acreditacion_hecho?.length > 0
       const hasC2 = this.checklist.group_c_analisis?.c2_legalidad_cobro?.length > 0
-      return hasA || hasB || hasC1 || hasC2
+      return hasA || hasB || hasC || hasC1 || hasC2
     }
   },
   methods: {

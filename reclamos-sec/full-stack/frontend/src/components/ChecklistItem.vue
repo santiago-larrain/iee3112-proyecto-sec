@@ -23,14 +23,52 @@
       </div>
     </div>
     <div v-if="isExpanded" class="item-details">
-      <div class="evidence-section" v-if="item.evidence">
-        <strong>Evidencia:</strong>
-        <p v-html="formatEvidence(item.evidence)"></p>
-      </div>
+      <!-- Sección 1: Descripción (texto estático) -->
       <div class="description-section" v-if="item.description">
-        <strong>Descripción:</strong>
+        <strong>📋 Descripción:</strong>
         <p>{{ item.description }}</p>
       </div>
+      
+      <!-- Sección 2: Evidencia Identificada (resultado de regla) -->
+      <div class="evidence-section" v-if="item.evidence">
+        <strong>🔍 Evidencia Identificada:</strong>
+        <p v-html="formatEvidence(item.evidence)"></p>
+      </div>
+      
+      <!-- Sección 3: Datos/Contexto (deep linking a archivos) -->
+      <div class="data-section" v-if="item.evidence_data">
+        <strong>📎 Datos/Contexto:</strong>
+        <div class="data-links">
+          <div v-if="item.evidence_data.file_id" class="data-link-item">
+            <button 
+              @click="openDocument(item.evidence_data.file_id, item.evidence_data.page_index)"
+              class="btn-open-doc"
+            >
+              📄 Abrir Documento
+              <span v-if="item.evidence_data.page_index !== null && item.evidence_data.page_index !== undefined">
+                (Página {{ item.evidence_data.page_index + 1 }})
+              </span>
+            </button>
+            <span v-if="item.evidence_data.coordinates" class="coordinates-info">
+              Coordenadas: {{ formatCoordinates(item.evidence_data.coordinates) }}
+            </span>
+          </div>
+          <div v-else-if="item.evidence_data.file_ids" class="data-link-item">
+            <div v-for="(fileId, idx) in item.evidence_data.file_ids" :key="idx" class="file-link">
+              <button @click="openDocument(fileId)" class="btn-open-doc">
+                📄 Documento {{ idx + 1 }}
+              </button>
+            </div>
+            <span v-if="item.evidence_data.count" class="count-info">
+              Total: {{ item.evidence_data.count }} archivo(s)
+            </span>
+          </div>
+          <div v-else class="data-placeholder">
+            <p>No hay referencias de archivos disponibles</p>
+          </div>
+        </div>
+      </div>
+      
       <div class="evidence-type" v-if="item.evidence_type">
         <span class="type-badge">
           {{ item.evidence_type === 'dato' ? '📊 Dato' : '📄 Archivo' }}
@@ -43,6 +81,7 @@
 <script>
 export default {
   name: 'ChecklistItem',
+  inject: ['actualizarChecklistItem'],
   props: {
     item: {
       type: Object,
@@ -82,8 +121,34 @@ export default {
       // Formatear evidencia con negritas para texto entre **
       return evidence.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     },
-    handleValidationChange(event) {
-      this.$emit('validated', this.item.id, event.target.checked)
+    formatCoordinates(coords) {
+      if (!coords || !Array.isArray(coords)) return 'N/A'
+      if (coords.length >= 4) {
+        return `[${coords[0].toFixed(0)}, ${coords[1].toFixed(0)}, ${coords[2].toFixed(0)}, ${coords[3].toFixed(0)}]`
+      }
+      return JSON.stringify(coords)
+    },
+    async openDocument(fileId, pageIndex = null) {
+      // Abrir documento en nueva pestaña o modal
+      const url = `/api/casos/${this.caseId}/documentos/${fileId}/preview`
+      if (pageIndex !== null && pageIndex !== undefined) {
+        // Si hay página específica, agregar como parámetro (el backend puede usarlo en el futuro)
+        window.open(`${url}?page=${pageIndex}`, '_blank')
+      } else {
+        window.open(url, '_blank')
+      }
+    },
+    async handleValidationChange(event) {
+      const validated = event.target.checked
+      try {
+        await this.actualizarChecklistItem(this.caseId, this.item.id, validated)
+        this.$emit('item-validated')
+      } catch (error) {
+        console.error('Error al actualizar validación:', error)
+        // Revertir checkbox si falla
+        event.target.checked = !validated
+        alert('Error al actualizar la validación: ' + (error.response?.data?.detail || error.message || 'Error desconocido'))
+      }
     }
   }
 }
@@ -185,16 +250,19 @@ export default {
 }
 
 .evidence-section,
-.description-section {
-  margin-bottom: 1rem;
+.description-section,
+.data-section {
+  margin-bottom: 1.5rem;
 }
 
 .evidence-section strong,
-.description-section strong {
+.description-section strong,
+.data-section strong {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   color: #333;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .evidence-section p,
@@ -202,9 +270,55 @@ export default {
   margin: 0;
   color: #666;
   line-height: 1.5;
-  padding: 0.5rem;
+  padding: 0.75rem;
   background: #f5f5f5;
   border-radius: 4px;
+}
+
+.data-links {
+  padding: 0.75rem;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.data-link-item {
+  margin-bottom: 0.5rem;
+}
+
+.file-link {
+  margin-bottom: 0.5rem;
+}
+
+.btn-open-doc {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: background 0.2s;
+  margin-right: 0.5rem;
+}
+
+.btn-open-doc:hover {
+  background: #5568d3;
+}
+
+.coordinates-info,
+.count-info {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.data-placeholder {
+  padding: 0.5rem;
+  color: #999;
+  font-style: italic;
 }
 
 .evidence-type {

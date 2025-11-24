@@ -80,24 +80,30 @@ El sistema es una aplicación **Full-Stack** diseñada para que funcionarios de 
 La aplicación es una **Single Page Application (SPA)** con dos vistas principales:
 
 #### 2.1.1. Dashboard (`/`)
-Panel principal que muestra todos los casos de reclamos con información resumida.
+Panel principal con diseño estilo Mail que muestra todos los casos de reclamos con información resumida.
 
-**Componentes Visuales:**
-- **Tarjetas de Resumen**: 4 tarjetas con métricas:
-  - 📊 Total de Casos
-  - ⏳ Casos Pendientes
-  - ✅ Casos Resueltos
-  - 🔒 Casos Cerrados
-- **Filtro por Estado**: Dropdown para filtrar casos por estado (PENDIENTE, EN_REVISION, RESUELTO, CERRADO)
-- **Tabla de Casos**: Tabla interactiva con columnas:
-  - ID Caso (SEC)
-  - Cliente (Nombre)
-  - RUT
-  - Materia
-  - Monto en Disputa
-  - Empresa
-  - Estado (con badge de color)
-  - Fecha de Ingreso
+**Layout:**
+- **Panel Izquierdo (Sidebar)**: Panel fijo de ~300px con:
+  - **Estadísticas**: Tarjetas con métricas:
+    - Total de Casos
+    - Pendientes
+    - Resueltos
+  - **Sección de Análisis**: Placeholder para futuras funcionalidades de análisis
+- **Área Principal (Main Content)**: Área flexible con:
+  - **Barra de Búsqueda**: Buscador con debouncing que busca en campos del EDN
+  - **Filtros**: 
+    - Filtro por Estado (Todos, Pendientes, Resueltos)
+    - Filtro por Tipo de Caso (Todos, CNR, Otro)
+  - **Tabla de Casos**: Tabla interactiva con columnas:
+    - ID Caso (SEC)
+    - Cliente (Nombre)
+    - RUT
+    - Materia
+    - Monto en Disputa
+    - Empresa
+    - Estado (con badge de color)
+    - Fecha de Ingreso
+    - Acciones (botón Abrir)
   - Botón "Abrir" para ver detalles
 
 **Estados Visuales:**
@@ -349,20 +355,32 @@ backend/
 │   ├── __init__.py
 │   ├── db_manager.py     # SQLite DB Manager
 │   └── json_db_manager.py # JSON DB Manager (prioritario)
-├── ingestion/             # Módulo OMC (Objeto Maestro de Compilación)
-│   ├── __init__.py
-│   ├── document_processor.py  # Orquestador principal
-│   ├── pdf_extractor.py      # Extracción de PDFs
-│   ├── docx_extractor.py     # Extracción de DOCX
-│   ├── document_classifier.py # Clasificación de documentos
-│   └── entity_extractor.py   # Extracción de entidades (RUT, NIS, etc.)
+├── engine/                # Motores de procesamiento
+│   ├── omc/              # Objeto Maestro de Compilación (OMC)
+│   │   ├── __init__.py
+│   │   ├── document_processor.py  # Orquestador principal
+│   │   ├── pdf_extractor.py      # Extracción de PDFs con bbox
+│   │   ├── docx_extractor.py     # Extracción de DOCX
+│   │   ├── document_classifier.py # Clasificación de documentos y tipo_caso
+│   │   └── entity_extractor.py   # Extracción de entidades con posición
+│   └── min/              # Motor de Inferencia Normativa (MIN)
+│       ├── __init__.py
+│       ├── rule_engine.py        # Motor principal de reglas
+│       └── rules/                # Reglas de validación
+│           ├── __init__.py       # Registro de reglas
+│           ├── base_rules.py     # Reglas base compartidas
+│           └── cnr_rules.py      # Reglas específicas CNR
+├── checklist_tipo/        # JSONs de configuración de checklist
+│   ├── template.json     # Plantilla base
+│   └── cnr.json          # Checklist específico para CNR
 ├── scripts/               # Scripts de utilidad
 │   ├── __init__.py
 │   ├── process_example_cases.py  # Procesa casos de ejemplo
 │   └── create_json_database.py  # Crea BD JSON desde casos
 └── data/                  # Datos y archivos
     ├── DataBase/          # Base de datos JSON relacional
-    │   ├── casos.json
+    │   ├── casos.json     # Metadatos de casos (sin EDN embebido)
+    │   ├── edn.json       # EDNs separados: {case_id: edn_object}
     │   ├── personas.json
     │   ├── suministros.json
     │   └── documentos.json
@@ -434,7 +452,7 @@ backend/
    - Genera checklist si no existe
    - Soporta modo test/validate
 
-3. **`PUT /api/casos/{case_id}/documentos/{file_id}`**: Actualiza tipo de documento
+4. **`PUT /api/casos/{case_id}/documentos/{file_id}`**: Actualiza tipo de documento
    - Permite re-clasificación
    - Soporta nombre personalizado
    - Recalcula checklist automáticamente
@@ -445,13 +463,13 @@ backend/
    - Marca item como validado/no validado
    - Persiste en memoria (cache)
 
-5. **`PUT /api/casos/{case_id}/contexto`**: Actualiza contexto unificado
+6. **`PUT /api/casos/{case_id}/contexto`**: Actualiza contexto unificado
    - Edita información de cliente, suministro, caso
    - Guarda en `casos.json`, `personas.json`, `suministros.json`
    - Recarga caso desde BD
    - Solo disponible en modo validate
 
-6. **`POST /api/casos/{case_id}/resolucion`**: Genera borrador de resolución
+7. **`POST /api/casos/{case_id}/resolucion`**: Genera borrador de resolución
    - Basado en estado del checklist
    - Templates: INSTRUCCION o IMPROCEDENTE
    - Retorna borrador editable
@@ -461,7 +479,7 @@ backend/
    - Guarda resolución y fecha de cierre
    - Solo disponible en modo validate
 
-8. **`GET /api/casos/{case_id}/documentos/{file_id}/preview`**: Vista previa de documento
+9. **`GET /api/casos/{case_id}/documentos/{file_id}/preview`**: Vista previa de documento
    - Sirve archivos desde `example_cases/` o rutas absolutas
    - Soporta PDF, imágenes, otros formatos
    - Headers correctos para visualización inline
@@ -472,31 +490,120 @@ backend/
 - `get_cases_data()`: Obtiene casos con prioridad (JSON DB → SQLite → Mock)
 - `ensure_edn_completeness()`: Asegura valores por defecto en EDN
 - `recalculate_checklist()`: Recalcula checklist (usando ChecklistGenerator)
-- `_save_document_to_database()`: Guarda documento en `documentos.json`
+- `_save_document_to_database()`: Guarda documento en `documentos.json` y actualiza EDN en `edn.json`
 - `_update_persona_in_database()`: Actualiza persona en `personas.json`
 - `_update_suministro_in_database()`: Actualiza suministro en `suministros.json`
+
+**Nota sobre Persistencia:**
+- Las actualizaciones de EDN se guardan en `edn.json` (estructura separada)
+- Las actualizaciones de metadatos de caso se guardan en `casos.json`
+- Se usa `json_db_manager.update_edn()` para actualizar EDNs
 
 **Gestión de Cache:**
 - `cases_store`: Diccionario en memoria para cambios temporales
 - Se limpia después de guardar en BD para forzar recarga desde disco
 
-#### 4.2.4. `checklist_generator.py` - Generador de Checklist
+#### 4.2.4. `checklist_generator.py` - Generador de Checklist (Wrapper)
 
 **Clase `ChecklistGenerator`:**
 
+**Propósito**: Wrapper que delega la generación al Motor de Inferencia Normativa (MIN).
+
 **Método Principal:**
-- `generate_checklist(edn: Dict) -> Checklist`: Genera checklist completo basado en EDN
+- `generate_checklist(edn: Dict) -> Dict`: Genera checklist completo usando `RuleEngine`
 
-**Lógica de Generación:**
+**Implementación:**
+- Inicializa `RuleEngine` internamente
+- Convierte `Checklist` (Pydantic) a diccionario para compatibilidad
 
-1. **Grupo A - Admisibilidad y Forma**:
-   - A.1: Calcula días entre fecha ingreso y respuesta (debe ser ≤ 30 días)
-   - A.2: Busca referencia a reclamo previo en carta de respuesta
-   - A.3: Verifica coherencia entre materia y documentos (ej: CNR requiere OT)
+#### 4.2.5. `engine/min/` - Motor de Inferencia Normativa (MIN)
 
-2. **Grupo B - Instrucción (Integridad Probatoria)**:
-   - B.1: Verifica existencia de ORDEN_TRABAJO
-   - B.2: Cuenta evidencias fotográficas (debe haber ≥ 1)
+**Propósito**: Ejecuta reglas de validación basadas en JSONs configurables.
+
+**Componentes:**
+
+1. **`rule_engine.py` - RuleEngine**:
+   - `load_checklist_config(tipo_caso)`: Carga JSON de configuración según tipo de caso
+   - `generate_checklist(edn)`: Genera checklist ejecutando reglas
+   - `_evaluate_item(item_config, edn)`: Evalúa un item ejecutando su regla asociada
+
+2. **`rules/base_rules.py` - Reglas Base**:
+   - `rule_check_response_deadline()`: A.1 - Validación de plazo de respuesta
+   - `rule_check_previous_claim_trace()`: A.2 - Trazabilidad del reclamo previo
+   - `rule_check_materia_consistency()`: A.3 - Competencia de la materia
+   - `rule_check_ot_exists()`: B.1 - Existencia de Orden de Trabajo
+   - `rule_check_photos_existence()`: B.2 - Existencia de evidencia fotográfica
+   - `rule_check_calculation_table()`: B.3 - Existencia de memoria de cálculo
+   - `rule_check_notification_proof()`: B.4 - Acreditación de notificación
+
+3. **`rules/cnr_rules.py` - Reglas CNR**:
+   - `rule_check_finding_consistency()`: C.1.1 - Consistencia del hallazgo
+   - `rule_check_accuracy_proof()`: C.1.2 - Prueba de exactitud
+   - `rule_check_cim_validation()`: C.2.1 - Validación del CIM
+   - `rule_check_retroactive_period()`: C.2.2 - Periodo retroactivo
+   - `rule_check_tariff_correction()`: C.2.3 - Corrección monetaria
+
+**Flujo de Ejecución:**
+1. MIN lee `EDN.compilation_metadata.tipo_caso` (ej: "CNR")
+2. Carga JSON correspondiente (`checklist_tipo/cnr.json`)
+3. Para cada item en el JSON:
+   - Obtiene `rule_ref` (ej: "RULE_CHECK_OT_EXISTS")
+   - Busca función Python en `RULE_REGISTRY`
+   - Ejecuta función pasando EDN como argumento
+   - Retorna estado (CUMPLE/NO_CUMPLE/REVISION_MANUAL) + evidencia + datos con deep linking
+
+**Ventajas del Enfoque Modular:**
+- JSONs configurables sin código Python
+- Reglas testeables independientemente
+- Fácil agregar nuevos tipos de casos (solo crear nuevo JSON)
+- Lógica de negocio separada de estructura visual
+
+#### 4.2.6. `checklist_tipo/` - Configuración de Checklist
+
+**Archivos:**
+- `template.json`: Plantilla base con estructura de 3 grupos
+- `cnr.json`: Checklist específico para casos CNR
+
+**Estructura de JSON:**
+```json
+{
+  "metadata": {
+    "tipo_caso": "CNR",
+    "version": "1.0"
+  },
+  "groups": {
+    "group_a_admisibilidad": {
+      "items": [
+        {
+          "id": "A.1",
+          "title": "Validación de Plazo de Respuesta",
+          "description": "...",
+          "rule_ref": "RULE_CHECK_RESPONSE_DEADLINE",
+          "evidence_type": "dato"
+        }
+      ]
+    }
+  }
+}
+```
+
+#### 4.2.7. `engine/omc/` - Objeto Maestro de Compilación (OMC)
+
+**Mejoras Implementadas:**
+
+1. **Información de Posición (bbox)**:
+   - `PDFExtractor.extract_text()` ahora soporta `include_positions=True`
+   - Retorna datos de posición por página con coordenadas de palabras
+   - `EntityExtractor.extract_all()` acepta `positions_data` y retorna `source` con `file_ref`, `page_index`, `coordinates`
+
+2. **Clasificación de Tipo de Caso**:
+   - `DocumentClassifier.classify_tipo_caso()` determina tipo (CNR, CORTE_SUMINISTRO, etc.)
+   - Se guarda en `EDN.compilation_metadata.tipo_caso`
+   - Heurísticas basadas en documentos presentes
+
+3. **Estructura Mejorada**:
+   - Módulo movido de `ingestion/` a `engine/omc/`
+   - Mantiene compatibilidad con imports anteriores (actualizados en scripts)
    - B.3: Verifica existencia de TABLA_CALCULO
    - B.4: Busca acreditación de notificación (heurística básica)
 
@@ -524,17 +631,22 @@ backend/
 - Recargar datos después de actualizaciones
 
 **Métodos:**
-- `_load_data()`: Carga inicial de todos los JSON
-- `get_caso_by_case_id(case_id)`: Obtiene EDN de un caso
+- `_load_data()`: Carga inicial de todos los JSON (incluyendo `edn.json`)
+- `get_caso_by_case_id(case_id)`: Obtiene EDN de un caso fusionado con metadatos del caso
 - `get_all_casos()`: Obtiene resúmenes de todos los casos
 - `reload()`: Recarga todos los datos desde disco
-- `reload_case(case_id)`: Recarga un caso específico
+- `reload_case(case_id)`: Recarga un caso específico desde ambos archivos
+- `update_edn(case_id, edn)`: Actualiza un EDN en `edn.json`
 
 **Estructura de Datos:**
 - `self.personas`: Dict[RUT → Persona]
 - `self.suministros`: Dict["NIS-Comuna" → Suministro]
-- `self.casos`: List[Caso] (con EDN embebido)
+- `self.casos`: List[Caso] (solo metadatos, sin EDN embebido)
+- `self.edns`: Dict[case_id → EDN] (EDNs separados)
 - `self.documentos`: List[Documento]
+
+**Métodos Adicionales:**
+- `update_edn(case_id, edn)`: Actualiza un EDN en `edn.json`
 
 ##### `db_manager.py` - Gestor de Base de Datos SQLite
 
@@ -563,7 +675,25 @@ backend/
 
 **Nota**: Actualmente el sistema prioriza `JSONDBManager` sobre `DBManager` para desarrollo. SQLite se mantiene como opción para producción futura.
 
-#### 4.2.6. `ingestion/` - Módulo OMC (Objeto Maestro de Compilación)
+#### 4.2.8. Modelos Extendidos
+
+**Nuevos Modelos en `models.py`:**
+
+- **`SourceReference`**: Referencia a fuente de dato extraído
+  - `file_ref`: file_id del documento
+  - `page_index`: Índice de página (0-based)
+  - `coordinates`: [x, y, width, height] para bbox
+
+- **`ExtractedDataWithSource`**: Dato con referencia a fuente
+  - `value`: Valor extraído
+  - `source`: SourceReference opcional
+
+- **`ChecklistItem` extendido**:
+  - `evidence_data`: Datos con deep linking (file_id, page_index, coordinates)
+  - `rule_ref`: Referencia a la regla que lo generó
+
+- **`CompilationMetadata` extendido**:
+  - `tipo_caso`: Tipo de caso (CNR, CORTE_SUMINISTRO, etc.)
 
 Este módulo implementa el "black box" de procesamiento de documentos. Para documentación detallada, ver [Sección 7: OMC](#7-omc-objeto-maestro-de-compilación) y el documento `OMC_Explained.md`.
 
@@ -693,7 +823,8 @@ frontend/
 **Clase `casosAPI`:**
 
 **Métodos:**
-- `getCasos()`: Obtiene lista de casos
+- `getCasos(tipoCaso)`: Obtiene lista de casos, opcionalmente filtrados por tipo
+- `searchCasos(query)`: Busca casos por texto en campos del EDN
 - `getCaso(caseId)`: Obtiene caso completo
 - `updateDocumento(caseId, fileId, tipo, customName)`: Actualiza documento
 - `updateChecklistItem(caseId, itemId, validated)`: Actualiza checklist
@@ -708,10 +839,15 @@ frontend/
 
 #### 5.2.5. `views/Dashboard.vue` - Panel Principal
 
+**Layout:**
+- Diseño estilo Mail con sidebar izquierdo fijo y área principal flexible
+- Usa componentes: `Sidebar.vue`, `SearchBar.vue`, `FilterBar.vue`, `CasesTable.vue`
+
 **Funcionalidad:**
 - Carga lista de casos al montar
-- Muestra tarjetas de resumen (total, pendientes, resueltos, cerrados)
-- Filtro por estado
+- Búsqueda con debouncing (300ms) que busca en campos del EDN
+- Filtros por estado y tipo de caso
+- Estadísticas en sidebar que se actualizan con filtros
 - Tabla interactiva con casos
 - Navegación a detalle de caso
 
@@ -719,14 +855,13 @@ frontend/
 - `totalCasos`: Total de casos
 - `pendientes`: Casos pendientes
 - `resueltos`: Casos resueltos
-- `cerrados`: Casos cerrados
-- `casosFiltrados`: Casos filtrados por estado
+- `casosFiltrados`: Casos filtrados por estado y tipo
 
 **Métodos:**
-- `cargarCasos()`: Fetch de casos desde API
+- `cargarCasos(tipoCaso)`: Fetch de casos desde API con filtro opcional
+- `onSearch(query)`: Maneja búsqueda, llama a `casosAPI.searchCasos()`
+- `onFilter(filters)`: Maneja filtros de estado y tipo
 - `abrirCaso(caseId)`: Navegación a detalle
-- `getStatusClass(status)`: Clase CSS para badge de estado
-- `aplicarFiltros()`: Aplicación de filtros (automático por computed)
 
 #### 5.2.6. `views/CasoDetalle.vue` - Vista de Detalle
 
@@ -879,8 +1014,9 @@ El sistema utiliza una **estrategia híbrida** de persistencia:
 
 1. **Base de Datos JSON Relacional** (Prioritaria - Desarrollo Actual)
    - Ubicación: `backend/data/DataBase/`
-   - Archivos: `casos.json`, `personas.json`, `suministros.json`, `documentos.json`
+   - Archivos: `casos.json`, `edn.json`, `personas.json`, `suministros.json`, `documentos.json`
    - Gestor: `JSONDBManager`
+   - **Nota**: EDNs están separados en `edn.json` para mejor modularidad
 
 2. **Base de Datos SQLite** (Opcional - Producción Futura)
    - Ubicación: `backend/data/sec_reclamos.db`
@@ -949,31 +1085,71 @@ El sistema utiliza una **estrategia híbrida** de persistencia:
     "monto_disputa": 150000,
     "fecha_ingreso": "2024-01-08",
     "fecha_cierre": "2024-01-15",
-    "estado": "CERRADO",
-    "resolucion": {
-      "content": "RESOLUCIÓN IMPROCEDENTE...",
-      "fecha_firma": "2024-01-15T10:30:00"
-    },
-    "edn": {
-      "compilation_metadata": {...},
-      "unified_context": {...},
-      "document_inventory": {...},
-      "checklist": {...}
-    }
+    "estado": "CERRADO"
   }
 ]
 ```
 
 **Propósito:**
-- Almacenar casos de reclamos completos
-- Contiene EDN embebido (Expediente Digital Normalizado)
+- Almacenar metadatos de casos de reclamos (sin EDN embebido)
 - Relaciones con personas y suministros mediante IDs
 - Estado del caso (PENDIENTE, EN_REVISION, RESUELTO, CERRADO)
-- Resolución final si está cerrado
+- **Nota**: El EDN está separado en `edn.json` (ver sección 6.2.4)
 
 **Clave Primaria**: `case_id` (formato SEC: YYMMDD-XXXXXX)
 
-#### 6.2.4. `documentos.json`
+**Relación**: 1:1 con `edn.json` mediante `case_id`
+
+#### 6.2.4. `edn.json`
+
+**Estructura (EDNs Separados):**
+```json
+{
+  "230125-000509": {
+    "compilation_metadata": {
+      "case_id": "230125-000509",
+      "processing_timestamp": "2025-11-20T06:00:49.251482+00:00",
+      "status": "COMPLETED",
+      "tipo_caso": "CNR"
+    },
+    "unified_context": {
+      "rut_client": "12.345.678-9",
+      "client_name": "Juan Pérez",
+      "service_nis": "608749",
+      "address_standard": "Av. Principal 123",
+      "commune": "Santiago",
+      "email": "juan@example.com",
+      "phone": "+56912345678"
+    },
+    "document_inventory": {
+      "level_1_critical": [...],
+      "level_2_supporting": [...],
+      "level_0_missing": [...]
+    },
+    "checklist": {
+      "group_a_admisibilidad": [...],
+      "group_b_instruccion": [...],
+      "group_c_analisis": [...]
+    },
+    "resolucion": {
+      "content": "...",
+      "fecha_firma": "2025-01-15T10:30:00Z"
+    }
+  }
+}
+```
+
+**Propósito:**
+- Almacenar EDNs (Expedientes Digitales Normalizados) separados de los metadatos del caso
+- Facilita actualizaciones independientes de EDN y metadatos
+- Mejora la modularidad y el rendimiento (no cargar EDN completo cuando solo se necesitan metadatos)
+- Permite versionado y auditoría de cambios en EDN
+
+**Clave**: `case_id` (coincide con `casos.json`)
+
+**Relación**: 1:1 con `casos.json` (un caso tiene un EDN)
+
+#### 6.2.5. `documentos.json`
 
 **Estructura:**
 ```json
@@ -1102,11 +1278,14 @@ El OMC se integra en el sistema mediante:
    - `scripts/create_json_database.py`: Crea BD JSON desde casos
 
 2. **Módulo de Ingesta**:
-   - `ingestion/document_processor.py`: Orquestador principal
-   - `ingestion/pdf_extractor.py`: Extracción de PDFs
-   - `ingestion/docx_extractor.py`: Extracción de DOCX
-   - `ingestion/document_classifier.py`: Clasificación
-   - `ingestion/entity_extractor.py`: Extracción de entidades
+   - `engine/omc/document_processor.py`: Orquestador principal
+   - `engine/omc/pdf_extractor.py`: Extracción de PDFs con bbox
+   - `engine/omc/docx_extractor.py`: Extracción de DOCX
+   - `engine/omc/document_classifier.py`: Clasificación y tipo_caso
+   - `engine/omc/entity_extractor.py`: Extracción de entidades con posición
+   - `engine/min/rule_engine.py`: Motor de reglas
+   - `engine/min/rules/`: Reglas de validación
+   - `checklist_tipo/*.json`: Configuraciones de checklist
 
 3. **Uso en Producción**:
    - Los casos procesados se almacenan en `DataBase/`

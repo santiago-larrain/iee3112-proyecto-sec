@@ -231,7 +231,7 @@ def create_json_database():
             "alertas": []
         }
         
-        # Crear caso
+        # Crear caso (sin EDN anidado)
         caso = {
             "id": len(casos) + 1,
             "case_id": case_id,
@@ -241,11 +241,13 @@ def create_json_database():
             "materia": "Reclamo SEC",
             "monto_disputa": None,
             "fecha_ingreso": info.get('fecha_ingreso'),
-            "estado": "PENDIENTE",
-            "edn": edn
+            "estado": "PENDIENTE"
         }
         
         casos.append(caso)
+        
+        # Guardar EDN en estructura separada
+        edns[case_id] = edn
     
     # Guardar archivos JSON
     with open(db_dir / "personas.json", "w", encoding="utf-8") as f:
@@ -257,17 +259,23 @@ def create_json_database():
     with open(db_dir / "casos.json", "w", encoding="utf-8") as f:
         json.dump(casos, f, indent=2, ensure_ascii=False)
     
-    # Crear índice de documentos
+    # Guardar EDNs en archivo separado
+    with open(db_dir / "edn.json", "w", encoding="utf-8") as f:
+        json.dump(edns, f, indent=2, ensure_ascii=False)
+    
+    # Crear índice de documentos (usando EDNs)
     documentos = []
     for caso in casos:
-        for level in ['level_1_critical', 'level_2_supporting']:
-            for doc in caso['edn']['document_inventory'].get(level, []):
-                documentos.append({
-                    "id": len(documentos) + 1,
-                    "caso_id": caso['id'],
-                    "case_id": caso['case_id'],
-                    **doc
-                })
+        case_id = caso['case_id']
+        if case_id in edns:
+            for level in ['level_1_critical', 'level_2_supporting']:
+                for doc in edns[case_id]['document_inventory'].get(level, []):
+                    documentos.append({
+                        "id": len(documentos) + 1,
+                        "caso_id": caso['id'],
+                        "case_id": caso['case_id'],
+                        **doc
+                    })
     
     with open(db_dir / "documentos.json", "w", encoding="utf-8") as f:
         json.dump(documentos, f, indent=2, ensure_ascii=False)
@@ -276,6 +284,7 @@ def create_json_database():
     print(f"  - {len(personas)} personas")
     print(f"  - {len(suministros)} suministros")
     print(f"  - {len(casos)} casos")
+    print(f"  - {len(edns)} EDNs")
     print(f"  - {len(documentos)} documentos")
 
 

@@ -20,6 +20,7 @@ from models import (
 from database import DBManager
 from database.json_db_manager import JSONDBManager
 from checklist_generator import ChecklistGenerator
+from engine.omc.document_categorizer import ensure_functional_categories
 
 router = APIRouter()
 
@@ -66,6 +67,24 @@ def get_app_mode(x_app_mode: Optional[str] = Header(None, alias='X-App-Mode'), m
     mode_value = (x_app_mode or mode or 'validate').lower()
     return mode_value if mode_value in ['test', 'validate'] else 'validate'
 
+def _sort_summaries(summaries: List[CaseSummary], sort_by: str, reverse: bool = False) -> List[CaseSummary]:
+    """Ordena los summaries por la columna especificada"""
+    sort_key_map = {
+        'case_id': lambda s: s.case_id,
+        'client_name': lambda s: s.client_name.lower(),
+        'rut_client': lambda s: s.rut_client.lower(),
+        'materia': lambda s: s.materia.lower(),
+        'monto_disputa': lambda s: s.monto_disputa or 0,
+        'empresa': lambda s: s.empresa.lower(),
+        'status': lambda s: s.status.value if hasattr(s.status, 'value') else str(s.status),
+        'fecha_ingreso': lambda s: s.fecha_ingreso or ''
+    }
+    
+    sort_key = sort_key_map.get(sort_by.lower())
+    if sort_key:
+        return sorted(summaries, key=sort_key, reverse=reverse)
+    return summaries
+
 # Inicializar generador de checklist
 checklist_generator = ChecklistGenerator()
 
@@ -107,21 +126,23 @@ def ensure_edn_completeness(edn: dict) -> dict:
     doc_inv.setdefault("level_2_supporting", [])
     doc_inv.setdefault("level_0_missing", [])
     
-    # Generar checklist si no existe o está vacío
-    if "checklist" not in edn or not edn.get("checklist"):
-        try:
-            edn["checklist"] = checklist_generator.generate_checklist(edn)
-        except Exception as e:
-            print(f"Error generando checklist: {e}")
-            # Checklist por defecto vacío
-            edn["checklist"] = {
-                "group_a_admisibilidad": [],
-                "group_b_instruccion": [],
-                "group_c_analisis": {
-                    "c1_acreditacion_hecho": [],
-                    "c2_legalidad_cobro": []
-                }
-            }
+    # Asegurar categorías funcionales
+    doc_inv = ensure_functional_categories(doc_inv)
+    edn["document_inventory"] = doc_inv
+    
+    # Siempre regenerar checklist usando MIN (para asegurar tipo_caso correcto y estructura nueva)
+    try:
+        edn["checklist"] = checklist_generator.generate_checklist(edn)
+    except Exception as e:
+        print(f"Error generando checklist en ensure_edn_completeness: {e}")
+        import traceback
+        traceback.print_exc()
+        # Checklist por defecto vacío
+        edn["checklist"] = {
+            "group_a_admisibilidad": [],
+            "group_b_instruccion": [],
+            "group_c_analisis": []
+        }
     
     # Campos opcionales adicionales
     edn.setdefault("materia", None)
@@ -160,11 +181,30 @@ def get_cases_data():
         if casos_json:
             casos = []
             for caso_json in casos_json:
-                edn = caso_json.get('edn', {})
-                case_id = caso_json.get('case_id') or edn.get('compilation_metadata', {}).get('case_id')
+                case_id = caso_json.get('case_id')
+                if not case_id:
+                    continue
+                
+                # Obtener EDN desde edn.json (nueva estructura)
+                edn = json_db_manager.get_caso_by_case_id(case_id)
+                if not edn:
+                    # Si no hay EDN, crear uno básico
+                    edn = {
+                        "compilation_metadata": {
+                            "case_id": case_id,
+                            "processing_timestamp": "",
+                            "status": "UNKNOWN"
+                        },
+                        "unified_context": {},
+                        "document_inventory": {
+                            "level_1_critical": [],
+                            "level_2_supporting": [],
+                            "level_0_missing": []
+                        }
+                    }
                 
                 # Aplicar cambios en memoria si existen
-                if case_id and case_id in cases_store:
+                if case_id in cases_store:
                     stored = cases_store[case_id]
                     if "document_inventory" in stored:
                         edn["document_inventory"] = stored["document_inventory"]
@@ -231,9 +271,26 @@ def recalculate_checklist(caso: dict):
         })
 
 @router.get("/casos", response_model=List[CaseSummary])
-def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Query(None)):
-    """Lista todos los casos"""
+def get_casos(x_app_mode: Optional[str] = Header(None, alias='X-App-Mode'), 
+              mode: Optional[str] = Query(None),
+              q: Optional[str] = Query(None, description="Query de búsqueda"),
+              tipo_caso: Optional[str] = Query(None),
+              estado: Optional[str] = Query(None, description="Filtro por estado"),
+              sort_by: Optional[str] = Query(None, description="Columna para ordenar"),
+              sort_order: Optional[str] = Query(None, description="Orden: asc o desc"),
+              page: Optional[int] = Query(None, ge=1, description="Número de página"),
+              page_size: Optional[int] = Query(None, ge=1, le=1000, description="Tamaño de página")):
+    """Lista todos los casos con búsqueda, filtrado, ordenamiento y paginación"""
     app_mode = get_app_mode(x_app_mode, mode)
+    
+    # Valores por defecto
+    sort_order = sort_order or 'asc'
+    page = page or 1
+    page_size = page_size or 100
+    
+    # Normalizar sort_order
+    if sort_order.lower() not in ['asc', 'desc']:
+        sort_order = 'asc'
     
     # Si está en modo test, usar mock
     if app_mode == 'test':
@@ -247,6 +304,21 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
                     caso_data["document_inventory"] = stored["document_inventory"]
                 if "checklist" in stored:
                     caso_data["checklist"] = stored["checklist"]
+            
+            # Aplicar búsqueda si se especifica
+            if q:
+                query_lower = q.lower()
+                unified_context = caso_data.get("unified_context", {})
+                searchable_fields = [
+                    case_id,
+                    unified_context.get("client_name", ''),
+                    unified_context.get("rut_client", ''),
+                    caso_data.get("materia", ''),
+                    caso_data.get("empresa", ''),
+                    str(caso_data.get("monto_disputa", 0))
+                ]
+                if not any(query_lower in str(field).lower() for field in searchable_fields if field):
+                    continue
             
             checklist = caso_data.get("checklist")
             status = CaseStatus.PENDIENTE
@@ -265,6 +337,10 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
                 elif has_failures:
                     status = CaseStatus.EN_REVISION
             
+            # Filtrar por estado si se especifica
+            if estado and status.value != estado:
+                continue
+            
             unified_context = caso_data.get("unified_context", {})
             client_name = unified_context.get("client_name") or "N/A"
             rut_client = unified_context.get("rut_client") or "N/A"
@@ -280,6 +356,17 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
                 empresa=caso_data.get("empresa") or "N/A"
             )
             summaries.append(summary)
+        
+        # Aplicar ordenamiento
+        if sort_by:
+            reverse_order = sort_order.lower() == 'desc'
+            summaries = _sort_summaries(summaries, sort_by, reverse_order)
+        
+        # Aplicar paginación
+        start_idx = (page - 1) * page_size
+        end_idx = start_idx + page_size
+        summaries = summaries[start_idx:end_idx]
+        
         return summaries
     
     # Modo validate: usar casos reales
@@ -289,6 +376,15 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
         if casos_bd:
             summaries = []
             for caso_bd in casos_bd:
+                # Filtrar por tipo_caso si se especifica
+                if tipo_caso:
+                    # Obtener EDN para verificar tipo_caso
+                    edn = json_db_manager.get_caso_by_case_id(caso_bd['case_id'])
+                    if edn:
+                        edn_tipo_caso = edn.get("compilation_metadata", {}).get("tipo_caso")
+                        if edn_tipo_caso != tipo_caso:
+                            continue
+                
                 # Determinar status desde la BD
                 estado_bd = caso_bd.get('estado', 'PENDIENTE')
                 if estado_bd == CaseStatus.CERRADO.value:
@@ -299,6 +395,25 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
                     status = CaseStatus.EN_REVISION
                 else:
                     status = CaseStatus.PENDIENTE
+                
+                # Filtrar por estado si se especifica
+                if estado and status.value != estado:
+                    continue
+                
+                # Aplicar búsqueda si se especifica
+                if q:
+                    query_lower = q.lower()
+                    # Buscar en campos visibles en el dashboard
+                    searchable_fields = [
+                        caso_bd.get('case_id', ''),
+                        caso_bd.get('client_name', ''),
+                        caso_bd.get('rut_client', ''),
+                        caso_bd.get('materia', ''),
+                        caso_bd.get('empresa', ''),
+                        str(caso_bd.get('monto_disputa', 0))
+                    ]
+                    if not any(query_lower in str(field).lower() for field in searchable_fields if field):
+                        continue
                 
                 summary = CaseSummary(
                     case_id=caso_bd['case_id'],
@@ -311,6 +426,16 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
                     empresa=caso_bd.get('empresa') or 'N/A'
                 )
                 summaries.append(summary)
+            
+            # Aplicar ordenamiento
+            if sort_by:
+                reverse_order = sort_order.lower() == 'desc'
+                summaries = _sort_summaries(summaries, sort_by, reverse_order)
+            
+            # Aplicar paginación
+            start_idx = (page - 1) * page_size
+            end_idx = start_idx + page_size
+            summaries = summaries[start_idx:end_idx]
             
             if summaries:
                 return summaries
@@ -336,7 +461,9 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
         print(f"Error leyendo estados de casos: {e}")
     
     for caso in casos_data:
-        case_id = caso["compilation_metadata"]["case_id"]
+        case_id = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id:
+            case_id = caso.get("case_id")
         
         # Si el caso está cerrado en la BD, usar ese estado directamente
         estado_guardado = estados_guardados.get(case_id)
@@ -361,13 +488,35 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
                 elif has_failures:
                     status = CaseStatus.EN_REVISION
         
+        # Filtrar por estado si se especifica
+        if estado and status.value != estado:
+            continue
+        
+        # Aplicar búsqueda si se especifica
+        if q:
+            query_lower = q.lower()
+            unified_context = caso.get("unified_context", {})
+            searchable_fields = [
+                case_id or '',
+                unified_context.get("client_name", ''),
+                unified_context.get("rut_client", ''),
+                caso.get("materia", ''),
+                caso.get("empresa", ''),
+                str(caso.get("monto_disputa", 0))
+            ]
+            if not any(query_lower in str(field).lower() for field in searchable_fields if field):
+                continue
+        
         unified_context = caso.get("unified_context", {})
         # Asegurar que los valores nunca sean None
         client_name = unified_context.get("client_name") or "N/A"
         rut_client = unified_context.get("rut_client") or "N/A"
         
+        case_id_summary = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id_summary:
+            case_id_summary = caso.get("case_id", "UNKNOWN")
         summary = CaseSummary(
-            case_id=caso["compilation_metadata"]["case_id"],
+            case_id=case_id_summary,
             client_name=client_name,
             rut_client=rut_client,
             materia=caso.get("materia") or "N/A",
@@ -377,6 +526,16 @@ def get_casos(x_app_mode: Optional[str] = Header(None), mode: Optional[str] = Qu
             empresa=caso.get("empresa") or "N/A"
         )
         summaries.append(summary)
+    
+    # Aplicar ordenamiento
+    if sort_by:
+        reverse_order = sort_order.lower() == 'desc'
+        summaries = _sort_summaries(summaries, sort_by, reverse_order)
+    
+    # Aplicar paginación
+    start_idx = (page - 1) * page_size
+    end_idx = start_idx + page_size
+    summaries = summaries[start_idx:end_idx]
     
     return summaries
 
@@ -406,6 +565,7 @@ def get_caso(case_id: str, x_app_mode: Optional[str] = Header(None), mode: Optio
         edn = json_db_manager.get_caso_by_case_id(case_id)
         if edn:
             # Asegurar que todos los campos requeridos existan
+            # Nota: get_caso_by_case_id ya fusiona metadatos del caso con el EDN
             edn = ensure_edn_completeness(edn)
             
             # Aplicar cambios en memoria si existen
@@ -415,6 +575,14 @@ def get_caso(case_id: str, x_app_mode: Optional[str] = Header(None), mode: Optio
                     edn["document_inventory"] = stored["document_inventory"]
                 if "checklist" in stored:
                     edn["checklist"] = stored["checklist"]
+            
+            # Siempre regenerar checklist usando MIN (para asegurar tipo_caso correcto)
+            try:
+                edn["checklist"] = checklist_generator.generate_checklist(edn)
+            except Exception as e:
+                print(f"Error generando checklist en get_caso: {e}")
+                import traceback
+                traceback.print_exc()
             
             return ExpedienteDigitalNormalizado(**edn)
     except Exception as e:
@@ -440,10 +608,117 @@ def get_caso(case_id: str, x_app_mode: Optional[str] = Header(None), mode: Optio
     # Fallback a mock
     casos_data = get_cases_data()
     for caso in casos_data:
-        if caso["compilation_metadata"]["case_id"] == case_id:
+        case_id_caso = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id_caso:
+            # Intentar obtener desde el caso directamente si no tiene compilation_metadata
+            case_id_caso = caso.get("case_id")
+        if case_id_caso == case_id:
             return ExpedienteDigitalNormalizado(**caso)
     
     raise HTTPException(status_code=404, detail=f"Caso {case_id} no encontrado")
+
+@router.get("/casos/search", response_model=List[CaseSummary])
+def search_casos(q: str = Query(..., description="Query de búsqueda"),
+                x_app_mode: Optional[str] = Header(None),
+                mode: Optional[str] = Query(None)):
+    """Busca casos por texto en los campos del EDN"""
+    app_mode = get_app_mode(x_app_mode, mode)
+    
+    if app_mode == 'test':
+        # En modo test, buscar en mock data
+        data = load_mock_data()
+        casos_data = data["casos"]
+    else:
+        # En modo validate, buscar en JSON DB
+        casos_bd = json_db_manager.get_all_casos()
+        casos_data = []
+        for caso_bd in casos_bd:
+            case_id = caso_bd['case_id']
+            edn = json_db_manager.get_caso_by_case_id(case_id)
+            if edn:
+                casos_data.append(edn)
+    
+    # Buscar en campos del EDN
+    query_lower = q.lower()
+    matching_cases = []
+    
+    for caso in casos_data:
+        case_id = caso.get("compilation_metadata", {}).get("case_id", "")
+        
+        # Buscar en unified_context
+        unified_context = caso.get("unified_context", {})
+        if any(query_lower in str(v).lower() for v in unified_context.values() if v):
+            matching_cases.append(caso)
+            continue
+        
+        # Buscar en document_inventory
+        doc_inventory = caso.get("document_inventory", {})
+        for level in ["level_1_critical", "level_2_supporting"]:
+            for doc in doc_inventory.get(level, []):
+                if query_lower in doc.get("original_name", "").lower() or \
+                   query_lower in doc.get("standardized_name", "").lower():
+                    matching_cases.append(caso)
+                    break
+            if caso in matching_cases:
+                break
+        
+        # Buscar en compilation_metadata
+        compilation_metadata = caso.get("compilation_metadata", {})
+        if query_lower in case_id.lower() or \
+           query_lower in str(compilation_metadata.get("tipo_caso", "")).lower():
+            matching_cases.append(caso)
+            continue
+    
+    # Convertir a CaseSummary
+    summaries = []
+    for caso in matching_cases:
+        case_id = caso.get("compilation_metadata", {}).get("case_id", "")
+        unified_context = caso.get("unified_context", {})
+        
+        # Usar EDN como fuente principal (unified_context)
+        client_name = unified_context.get('client_name')
+        rut_client = unified_context.get('rut_client')
+        
+        # Fallback a personas.json solo si no hay datos en EDN
+        if not client_name or client_name in ['—', 'N/A', '']:
+            rut = rut_client
+            persona = json_db_manager.personas.get(rut) if rut else None
+            if persona:
+                client_name = persona.get('nombre', 'N/A')
+                if not rut_client or rut_client in ['—', 'N/A', '']:
+                    rut_client = persona.get('rut', 'N/A')
+        
+        # Si aún no hay nombre, usar placeholder
+        if not client_name or client_name in ['—', 'N/A', '']:
+            client_name = f"Cliente {case_id}"
+        if not rut_client or rut_client in ['—', 'N/A', '']:
+            rut_client = f"RUT-{case_id}"
+        
+        # Determinar estado (simplificado)
+        status = CaseStatus.PENDIENTE
+        # Buscar en casos.json para obtener estado real
+        for c in json_db_manager.casos:
+            if c.get('case_id') == case_id:
+                estado_bd = c.get('estado', 'PENDIENTE')
+                if estado_bd == CaseStatus.CERRADO.value:
+                    status = CaseStatus.CERRADO
+                elif estado_bd == 'RESUELTO':
+                    status = CaseStatus.RESUELTO
+                break
+        
+        summary = CaseSummary(
+            case_id=case_id,
+            client_name=client_name,
+            rut_client=rut_client,
+            materia=caso.get('materia') or 'N/A',
+            monto_disputa=caso.get('monto_disputa') or 0,
+            status=status,
+            fecha_ingreso=caso.get('fecha_ingreso') or '',
+            empresa=caso.get('empresa') or 'N/A'
+        )
+        summaries.append(summary)
+    
+    return summaries
 
 @router.put("/casos/{case_id}/documentos/{file_id}")
 def update_documento(case_id: str, file_id: str, update: DocumentUpdateRequest,
@@ -455,7 +730,11 @@ def update_documento(case_id: str, file_id: str, update: DocumentUpdateRequest,
     
     caso_encontrado = None
     for caso in casos_data:
-        if caso["compilation_metadata"]["case_id"] == case_id:
+        case_id_caso = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id_caso:
+            # Intentar obtener desde el caso directamente si no tiene compilation_metadata
+            case_id_caso = caso.get("case_id")
+        if case_id_caso == case_id:
             caso_encontrado = caso
             break
     
@@ -493,15 +772,28 @@ def update_documento(case_id: str, file_id: str, update: DocumentUpdateRequest,
         # Generar nombre estandarizado automático
         documento_encontrado["standardized_name"] = f"{update.type.value} - {documento_encontrado['original_name']}"
     
-    # Recalcular checklist
-    caso_encontrado["checklist"] = recalculate_checklist(caso_encontrado)
-    
-    # Guardar en DataBase (JSON)
+        # Recalcular categorías funcionales después de cambiar el tipo
+        doc_inventory = caso_encontrado["document_inventory"]
+        doc_inventory = ensure_functional_categories(doc_inventory)
+        caso_encontrado["document_inventory"] = doc_inventory
+        
+        # Recalcular checklist
+        caso_encontrado["checklist"] = recalculate_checklist(caso_encontrado)
+        
+        # Guardar en DataBase (JSON)
     try:
         _save_document_to_database(case_id, documento_encontrado, doc_level)
-        # Recargar el caso desde la base de datos para reflejar cambios
+        
+        # Actualizar EDN en edn.json
         if app_mode == 'validate':
-            json_db_manager.reload_case(case_id)
+            # Obtener EDN actualizado
+            edn_actualizado = json_db_manager.get_caso_by_case_id(case_id)
+            if edn_actualizado:
+                # Remover campos de caso que no pertenecen al EDN
+                edn_limpio = {k: v for k, v in edn_actualizado.items() 
+                             if k not in ['materia', 'monto_disputa', 'empresa', 'fecha_ingreso']}
+                json_db_manager.update_edn(case_id, edn_limpio)
+                json_db_manager.reload_case(case_id)
     except Exception as e:
         print(f"Error guardando documento en DataBase: {e}")
         # Continuar aunque falle la persistencia
@@ -532,7 +824,11 @@ def update_checklist_item(case_id: str, item_id: str, update: ChecklistItemUpdat
     
     caso_encontrado = None
     for caso in casos_data:
-        if caso["compilation_metadata"]["case_id"] == case_id:
+        case_id_caso = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id_caso:
+            # Intentar obtener desde el caso directamente si no tiene compilation_metadata
+            case_id_caso = caso.get("case_id")
+        if case_id_caso == case_id:
             caso_encontrado = caso
             break
     
@@ -554,7 +850,20 @@ def update_checklist_item(case_id: str, item_id: str, update: ChecklistItemUpdat
     if not item_encontrado:
         raise HTTPException(status_code=404, detail=f"Item {item_id} no encontrado")
     
-    # Guardar cambios
+    # Guardar cambios en EDN
+    if app_mode == 'validate':
+        # Obtener EDN actualizado
+        edn_actualizado = json_db_manager.get_caso_by_case_id(case_id)
+        if edn_actualizado:
+            # Actualizar checklist en EDN
+            edn_actualizado["checklist"] = checklist
+            # Remover campos de caso que no pertenecen al EDN
+            edn_limpio = {k: v for k, v in edn_actualizado.items() 
+                         if k not in ['materia', 'monto_disputa', 'empresa', 'fecha_ingreso']}
+            json_db_manager.update_edn(case_id, edn_limpio)
+            json_db_manager.reload_case(case_id)
+    
+    # Guardar cambios en memoria también
     if case_id not in cases_store:
         cases_store[case_id] = {}
     cases_store[case_id]["checklist"] = checklist
@@ -571,7 +880,11 @@ def generar_resolucion(case_id: str, request: ResolucionRequest,
     
     caso_encontrado = None
     for caso in casos_data:
-        if caso["compilation_metadata"]["case_id"] == case_id:
+        case_id_caso = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id_caso:
+            # Intentar obtener desde el caso directamente si no tiene compilation_metadata
+            case_id_caso = caso.get("case_id")
+        if case_id_caso == case_id:
             caso_encontrado = caso
             break
     
@@ -656,6 +969,64 @@ Se declara IMPROCEDENTE el presente reclamo, ratificando que la empresa {empresa
     
     return ResolucionResponse(borrador=borrador, template_type=template_type)
 
+@router.post("/casos/{case_id}/resolucion/pdf-preview")
+def preview_resolucion_pdf(case_id: str, request: ResolucionRequest,
+                          x_app_mode: Optional[str] = Header(None, alias='X-App-Mode'),
+                          mode: Optional[str] = Query(None)):
+    """Genera y devuelve un PDF de previsualización de la resolución"""
+    app_mode = get_app_mode(x_app_mode, mode)
+    casos_data = get_cases_data_with_mode(app_mode)
+    
+    caso_encontrado = None
+    for caso in casos_data:
+        case_id_caso = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+        if not case_id_caso:
+            case_id_caso = caso.get("case_id")
+        if case_id_caso == case_id:
+            caso_encontrado = caso
+            break
+    
+    if not caso_encontrado:
+        raise HTTPException(status_code=404, detail=f"Caso {case_id} no encontrado")
+    
+    unified_context = caso_encontrado.get('unified_context', {})
+    client_name = unified_context.get('client_name', 'N/A')
+    rut_client = unified_context.get('rut_client', 'N/A')
+    empresa = caso_encontrado.get('empresa', 'N/A')
+    materia = caso_encontrado.get('materia', 'N/A')
+    
+    # Crear directorio temporal para PDFs
+    temp_dir = current_dir.parent / "data" / "temp_pdfs"
+    temp_dir.mkdir(exist_ok=True)
+    
+    # Generar PDF
+    import uuid
+    pdf_filename = f"resolucion_preview_{uuid.uuid4().hex[:8]}.pdf"
+    pdf_path = temp_dir / pdf_filename
+    
+    resolucion_content = request.content or ""
+    
+    from utils.resolucion_pdf import generate_resolucion_pdf
+    success = generate_resolucion_pdf(
+        resolucion_content=resolucion_content,
+        case_id=case_id,
+        output_path=pdf_path,
+        client_name=client_name,
+        rut_client=rut_client,
+        empresa=empresa,
+        materia=materia
+    )
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Error al generar PDF de resolución")
+    
+    return FileResponse(
+        str(pdf_path),
+        media_type='application/pdf',
+        filename=f"Resolucion_{case_id}_preview.pdf",
+        headers={"Content-Disposition": f'inline; filename="Resolucion_{case_id}_preview.pdf"'}
+    )
+
 @router.post("/casos/{case_id}/cerrar")
 def cerrar_caso(case_id: str, request: CerrarCasoRequest,
                 x_app_mode: Optional[str] = Header(None, alias='X-App-Mode'),
@@ -699,17 +1070,105 @@ def cerrar_caso(case_id: str, request: CerrarCasoRequest,
         fecha_cierre = request.fecha_cierre or datetime.now().isoformat()
         caso_encontrado["fecha_cierre"] = fecha_cierre
         
-        # Guardar resolución si se proporciona
-        if request.resolucion_content:
-            if "resolucion" not in caso_encontrado:
-                caso_encontrado["resolucion"] = {}
-            caso_encontrado["resolucion"]["content"] = request.resolucion_content
-            caso_encontrado["resolucion"]["fecha_firma"] = fecha_cierre
-        
-        # Guardar cambios en JSON
+        # Guardar cambios en casos.json (solo metadatos del caso)
         casos[caso_index] = caso_encontrado
         with open(casos_path, "w", encoding="utf-8") as f:
             json.dump(casos, f, indent=2, ensure_ascii=False)
+        
+        # Generar PDF de resolución si hay contenido
+        resolucion_file_id = None
+        if request.resolucion_content:
+            from utils.resolucion_pdf import generate_resolucion_pdf
+            import uuid
+            
+            # Crear directorio para resoluciones finales
+            resoluciones_dir = current_dir.parent / "data" / "resoluciones"
+            resoluciones_dir.mkdir(exist_ok=True)
+            
+            # Obtener datos del caso para el PDF
+            edn = json_db_manager.get_caso_by_case_id(case_id)
+            unified_context = edn.get('unified_context', {}) if edn else {}
+            client_name = unified_context.get('client_name', 'N/A')
+            rut_client = unified_context.get('rut_client', 'N/A')
+            empresa = caso_encontrado.get('empresa', 'N/A')
+            materia = caso_encontrado.get('materia', 'N/A')
+            
+            # Generar PDF
+            pdf_filename = f"Resolucion_{case_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+            pdf_path = resoluciones_dir / pdf_filename
+            
+            success = generate_resolucion_pdf(
+                resolucion_content=request.resolucion_content,
+                case_id=case_id,
+                output_path=pdf_path,
+                client_name=client_name,
+                rut_client=rut_client,
+                empresa=empresa,
+                materia=materia
+            )
+            
+            if success:
+                # Guardar documento en documentos.json
+                resolucion_file_id = str(uuid.uuid4())
+                documentos_path = current_dir.parent / "data" / "DataBase" / "documentos.json"
+                
+                documento_resolucion = {
+                    "file_id": resolucion_file_id,
+                    "case_id": case_id,
+                    "original_name": pdf_filename,
+                    "standardized_name": f"Resolución Final - {case_id}",
+                    "type": "RESOLUCION_FINAL",
+                    "absolute_path": str(pdf_path.absolute()),
+                    "file_path": f"resoluciones/{pdf_filename}",
+                    "metadata": {
+                        "fecha_generacion": fecha_cierre,
+                        "tipo": "RESOLUCION_FINAL"
+                    }
+                }
+                
+                if documentos_path.exists():
+                    with open(documentos_path, "r", encoding="utf-8") as f:
+                        documentos = json.load(f)
+                else:
+                    documentos = []
+                
+                documentos.append(documento_resolucion)
+                
+                with open(documentos_path, "w", encoding="utf-8") as f:
+                    json.dump(documentos, f, indent=2, ensure_ascii=False)
+                
+                # Agregar resolución al document_inventory del EDN
+                if edn:
+                    if "document_inventory" not in edn:
+                        edn["document_inventory"] = {}
+                    if "otros" not in edn["document_inventory"]:
+                        edn["document_inventory"]["otros"] = []
+                    
+                    # Verificar que no exista ya
+                    existe = any(doc.get("file_id") == resolucion_file_id 
+                                for doc in edn["document_inventory"]["otros"])
+                    if not existe:
+                        edn["document_inventory"]["otros"].append({
+                            "file_id": resolucion_file_id,
+                            "original_name": pdf_filename,
+                            "standardized_name": f"Resolución Final - {case_id}",
+                            "type": "RESOLUCION_FINAL"
+                        })
+        
+        # Guardar resolución en EDN
+        if request.resolucion_content:
+            edn = json_db_manager.get_caso_by_case_id(case_id)
+            if edn:
+                if "resolucion" not in edn:
+                    edn["resolucion"] = {}
+                edn["resolucion"]["content"] = request.resolucion_content
+                edn["resolucion"]["fecha_firma"] = fecha_cierre
+                if resolucion_file_id:
+                    edn["resolucion"]["pdf_file_id"] = resolucion_file_id
+                # Remover campos de caso que no pertenecen al EDN
+                edn_limpio = {k: v for k, v in edn.items() 
+                             if k not in ['materia', 'monto_disputa', 'empresa', 'fecha_ingreso']}
+                json_db_manager.update_edn(case_id, edn_limpio)
         
         # Recargar el caso desde la base de datos
         json_db_manager.reload_case(case_id)
@@ -722,7 +1181,8 @@ def cerrar_caso(case_id: str, request: CerrarCasoRequest,
             "message": "Caso cerrado exitosamente",
             "case_id": case_id,
             "estado": CaseStatus.CERRADO.value,
-            "fecha_cierre": fecha_cierre
+            "fecha_cierre": fecha_cierre,
+            "resolucion_file_id": resolucion_file_id
         }
         
     except HTTPException:
@@ -764,34 +1224,35 @@ def update_unified_context(case_id: str, update: UnifiedContextUpdateRequest,
         if not caso_encontrado:
             raise HTTPException(status_code=404, detail=f"Caso {case_id} no encontrado")
         
-        # Actualizar unified_context
+        # Obtener EDN actual
+        edn = json_db_manager.get_caso_by_case_id(case_id)
+        if not edn:
+            raise HTTPException(status_code=404, detail=f"EDN para caso {case_id} no encontrado")
+        
+        # Actualizar unified_context en EDN
         if update.unified_context:
-            if "unified_context" not in caso_encontrado["edn"]:
-                caso_encontrado["edn"]["unified_context"] = {}
+            if "unified_context" not in edn:
+                edn["unified_context"] = {}
             
             for key, value in update.unified_context.items():
-                caso_encontrado["edn"]["unified_context"][key] = value if value else None
+                edn["unified_context"][key] = value if value else None
         
-        # Actualizar otros campos del caso
+        # Actualizar otros campos del caso (en casos.json)
         if update.materia is not None:
-            caso_encontrado["edn"]["materia"] = update.materia
             caso_encontrado["materia"] = update.materia
         
         if update.monto_disputa is not None:
-            caso_encontrado["edn"]["monto_disputa"] = update.monto_disputa
             caso_encontrado["monto_disputa"] = update.monto_disputa
         
         if update.empresa is not None:
-            caso_encontrado["edn"]["empresa"] = update.empresa
             caso_encontrado["empresa"] = update.empresa
         
         if update.fecha_ingreso is not None:
-            caso_encontrado["edn"]["fecha_ingreso"] = update.fecha_ingreso
             caso_encontrado["fecha_ingreso"] = update.fecha_ingreso
         
         # Actualizar personas y suministros si cambió RUT o NIS
         if update.unified_context:
-            unified_context = caso_encontrado["edn"]["unified_context"]
+            unified_context = edn["unified_context"]
             
             # Actualizar persona si cambió RUT o datos
             if unified_context.get("rut_client"):
@@ -810,10 +1271,15 @@ def update_unified_context(case_id: str, update: UnifiedContextUpdateRequest,
                     unified_context.get("address_standard")
                 )
         
-        # Guardar cambios en JSON
+        # Guardar cambios en casos.json (solo metadatos)
         casos[caso_index] = caso_encontrado
         with open(casos_path, "w", encoding="utf-8") as f:
             json.dump(casos, f, indent=2, ensure_ascii=False)
+        
+        # Guardar cambios en EDN (remover campos de caso que no pertenecen al EDN)
+        edn_limpio = {k: v for k, v in edn.items() 
+                     if k not in ['materia', 'monto_disputa', 'empresa', 'fecha_ingreso']}
+        json_db_manager.update_edn(case_id, edn_limpio)
         
         # Recargar el caso desde la base de datos para reflejar cambios
         json_db_manager.reload_case(case_id)
@@ -921,8 +1387,9 @@ def _update_suministro_in_database(nis: str, comuna: str = None, direccion: str 
 @router.get("/casos/{case_id}/documentos/{file_id}/preview")
 def preview_documento(case_id: str, file_id: str,
                      x_app_mode: Optional[str] = Header(None, alias='X-App-Mode'),
-                     mode: Optional[str] = Query(None)):
-    """Sirve el archivo del documento para vista previa"""
+                     mode: Optional[str] = Query(None),
+                     format: Optional[str] = Query(None, description="Formato de salida: pdf para DOCX")):
+    """Sirve el archivo del documento para vista previa. Para DOCX, convierte a PDF automáticamente."""
     current_dir = Path(__file__).parent
     
     # Buscar documento en documentos.json primero (más confiable)
@@ -946,10 +1413,14 @@ def preview_documento(case_id: str, file_id: str,
         casos_data = get_cases_data_with_mode(app_mode)
         
         for caso in casos_data:
-            if caso["compilation_metadata"]["case_id"] == case_id:
-                doc_inventory = caso["document_inventory"]
-                for level in ["level_1_critical", "level_2_supporting"]:
-                    for doc in doc_inventory.get(level, []):
+            case_id_caso = caso.get("compilation_metadata", {}).get("case_id") if isinstance(caso.get("compilation_metadata"), dict) else None
+            if not case_id_caso:
+                case_id_caso = caso.get("case_id")
+            if case_id_caso == case_id:
+                doc_inventory = caso.get("document_inventory", {})
+                # Buscar en todas las categorías funcionales también
+                for category in ["reclamo_respuesta", "informe_evidencias", "historial_calculos", "otros", "level_1_critical", "level_2_supporting"]:
+                    for doc in doc_inventory.get(category, []):
                         if doc.get("file_id") == file_id:
                             documento_encontrado = doc
                             break
@@ -976,6 +1447,20 @@ def preview_documento(case_id: str, file_id: str,
             file_path = Path(windows_path)
         
         if file_path.exists():
+            # Si es DOCX, convertir a PDF automáticamente
+            if file_path.suffix.lower() == '.docx':
+                from utils.docx_to_pdf import docx_to_pdf
+                pdf_path = docx_to_pdf(file_path)
+                if pdf_path and pdf_path.exists():
+                    return _serve_file(pdf_path, documento_encontrado.get("original_name", "documento.docx").replace('.docx', '.pdf'))
+                else:
+                    # Si falla la conversión, intentar HTML como fallback
+                    from utils.docx_to_html import docx_to_html
+                    html_content = docx_to_html(file_path)
+                    if html_content:
+                        from fastapi.responses import HTMLResponse
+                        return HTMLResponse(content=html_content)
+                    raise HTTPException(status_code=500, detail="No se pudo convertir DOCX a PDF ni HTML")
             return _serve_file(file_path, documento_encontrado.get("original_name", "documento.pdf"))
     
     # Prioridad 2: file_path relativo desde example_cases
@@ -984,6 +1469,20 @@ def preview_documento(case_id: str, file_id: str,
         file_path = example_cases_dir / documento_encontrado["file_path"]
         
         if file_path.exists():
+            # Si es DOCX, convertir a PDF automáticamente
+            if file_path.suffix.lower() == '.docx':
+                from utils.docx_to_pdf import docx_to_pdf
+                pdf_path = docx_to_pdf(file_path)
+                if pdf_path and pdf_path.exists():
+                    return _serve_file(pdf_path, documento_encontrado.get("original_name", "documento.docx").replace('.docx', '.pdf'))
+                else:
+                    # Si falla la conversión, intentar HTML como fallback
+                    from utils.docx_to_html import docx_to_html
+                    html_content = docx_to_html(file_path)
+                    if html_content:
+                        from fastapi.responses import HTMLResponse
+                        return HTMLResponse(content=html_content)
+                    raise HTTPException(status_code=500, detail="No se pudo convertir DOCX a PDF ni HTML")
             return _serve_file(file_path, documento_encontrado.get("original_name", "documento.pdf"))
     
     raise HTTPException(status_code=404, detail=f"Archivo físico no encontrado para documento {file_id}")

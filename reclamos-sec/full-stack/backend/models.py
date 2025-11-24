@@ -9,6 +9,7 @@ class DocumentType(str, Enum):
     TABLA_CALCULO = "TABLA_CALCULO"
     EVIDENCIA_FOTOGRAFICA = "EVIDENCIA_FOTOGRAFICA"
     GRAFICO_CONSUMO = "GRAFICO_CONSUMO"
+    INFORME_CNR = "INFORME_CNR"
     OTROS = "OTROS"
 
 class ChecklistStatus(str, Enum):
@@ -30,6 +31,7 @@ class CompilationMetadata(BaseModel):
     case_id: str
     processing_timestamp: str
     status: str
+    tipo_caso: Optional[str] = None  # CNR, CORTE_SUMINISTRO, DAÑO_EQUIPOS, ATENCION_COMERCIAL
 
 class UnifiedContext(BaseModel):
     rut_client: str = "N/A"
@@ -54,9 +56,30 @@ class MissingDocument(BaseModel):
     description: str
 
 class DocumentInventory(BaseModel):
-    level_1_critical: List[Document]
-    level_2_supporting: List[Document]
-    level_0_missing: List[MissingDocument]
+    # Categorías funcionales (nueva estructura)
+    reclamo_respuesta: Optional[List[Document]] = None  # Reclamo y respuesta de la empresa
+    informe_evidencias: Optional[List[Document]] = None  # Informe de laboratorio/evidencias
+    historial_calculos: Optional[List[Document]] = None  # Historial de consumo y cálculos
+    otros: Optional[List[Document]] = None  # Otros documentos
+    
+    # Estructura antigua (compatibilidad)
+    level_1_critical: List[Document] = []
+    level_2_supporting: List[Document] = []
+    level_0_missing: List[MissingDocument] = []
+    
+    class Config:
+        extra = "allow"  # Permitir campos adicionales
+
+class SourceReference(BaseModel):
+    """Referencia a la fuente de un dato extraído con información de posición"""
+    file_ref: str  # file_id del documento
+    page_index: Optional[int] = None  # Índice de página (0-based)
+    coordinates: Optional[List[float]] = None  # [x, y, width, height] para bbox
+
+class ExtractedDataWithSource(BaseModel):
+    """Dato extraído con referencia a su fuente"""
+    value: Any  # El valor extraído (número, texto, etc.)
+    source: Optional[SourceReference] = None
 
 class ChecklistItem(BaseModel):
     id: str
@@ -66,12 +89,14 @@ class ChecklistItem(BaseModel):
     evidence_type: Optional[str] = None  # "dato" o "archivo"
     validated: bool = False
     description: Optional[str] = None
+    evidence_data: Optional[Dict[str, Any]] = None  # Datos con deep linking
+    rule_ref: Optional[str] = None  # Referencia a la regla que lo generó
 
 class Checklist(BaseModel):
     # Estructura nueva (CNR)
     group_a_admisibilidad: Optional[List[ChecklistItem]] = None
     group_b_instruccion: Optional[List[ChecklistItem]] = None
-    group_c_analisis: Optional[Dict[str, Any]] = None  # {c1_acreditacion_hecho: [], c2_legalidad_cobro: []}
+    group_c_analisis: Optional[List[ChecklistItem]] = None  # Lista plana de items (subgrupos aplanados)
     metadata: Optional[Dict[str, Any]] = None
     
     # Estructura antigua (compatibilidad)

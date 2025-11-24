@@ -26,10 +26,34 @@ api.interceptors.request.use(config => {
 })
 
 export const casosAPI = {
-  // Obtener lista de casos
-  getCasos: () => {
+  // Obtener lista de casos con búsqueda, filtrado, ordenamiento y paginación
+  getCasos: (searchQuery = '', tipoCaso = '', estado = '', sortBy = null, sortOrder = 'asc', page = 1, pageSize = 100) => {
     const mode = getMode()
-    return api.get('/casos', { params: { mode } })
+    const params = { 
+      mode, 
+      page: page || 1, 
+      page_size: pageSize || 100 
+    }
+    if (searchQuery && searchQuery.trim()) {
+      params.q = searchQuery.trim()
+    }
+    if (tipoCaso && tipoCaso.trim()) {
+      params.tipo_caso = tipoCaso.trim()
+    }
+    if (estado && estado.trim()) {
+      params.estado = estado.trim()
+    }
+    if (sortBy && sortBy.trim()) {
+      params.sort_by = sortBy.trim()
+      params.sort_order = (sortOrder || 'asc').toLowerCase()
+    }
+    return api.get('/casos', { params })
+  },
+  
+  // Buscar casos
+  searchCasos: (query) => {
+    const mode = getMode()
+    return api.get('/casos/search', { params: { q: query, mode } })
   },
   
   // Obtener caso por ID
@@ -56,6 +80,18 @@ export const casosAPI = {
   // Actualizar contexto unificado y campos del caso
   updateUnifiedContext: (caseId, updates) =>
     api.put(`/casos/${caseId}/contexto`, updates),
+  
+  // Previsualizar PDF de resolución
+  previewResolucionPDF: (caseId, resolucionContent) => {
+    const mode = getMode()
+    return api.post(`/casos/${caseId}/resolucion/pdf-preview`, {
+      template_type: 'INSTRUCCION', // No importa para preview
+      content: resolucionContent
+    }, {
+      params: { mode },
+      responseType: 'blob'
+    })
+  },
   
   // Cerrar caso
   cerrarCaso: (caseId, resolucionContent) =>

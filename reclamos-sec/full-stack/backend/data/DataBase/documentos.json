@@ -318,5 +318,31 @@
     "standardized_name": "CARTA_RESPUESTA - RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
     "file_path": "RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
     "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/example_cases/240125-000595/RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx"
+  },
+  {
+    "file_id": "ea3ce8e7-4a2b-4485-aeca-63cdc86b34c5",
+    "case_id": "240110-000679",
+    "original_name": "Resolucion_240110-000679_20251121_214932.pdf",
+    "standardized_name": "Resolución Final - 240110-000679",
+    "type": "RESOLUCION_FINAL",
+    "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/resoluciones/Resolucion_240110-000679_20251121_214932.pdf",
+    "file_path": "resoluciones/Resolucion_240110-000679_20251121_214932.pdf",
+    "metadata": {
+      "fecha_generacion": "2025-11-22T00:49:33.814Z",
+      "tipo": "RESOLUCION_FINAL"
+    }
+  },
+  {
+    "file_id": "44d3ddee-12fd-49de-80fe-8e37f5d2c28c",
+    "case_id": "240108-000010",
+    "original_name": "Resolucion_240108-000010_20251122_190516.pdf",
+    "standardized_name": "Resolución Final - 240108-000010",
+    "type": "RESOLUCION_FINAL",
+    "absolute_path": "/mnt/c/Users/Santiago/Documentos/GitHub/iee3112-proyecto-sec/reclamos-sec/full-stack/backend/data/resoluciones/Resolucion_240108-000010_20251122_190516.pdf",
+    "file_path": "resoluciones/Resolucion_240108-000010_20251122_190516.pdf",
+    "metadata": {
+      "fecha_generacion": "2025-11-22T22:05:17.863Z",
+      "tipo": "RESOLUCION_FINAL"
+    }
   }
 ]

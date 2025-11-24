@@ -2,14 +2,15 @@
   <div class="seccion-b">
     <h3>Sección B: Gestor Documental Inteligente</h3>
     
-    <!-- Nivel 1: Críticos -->
-    <div class="document-group" v-if="documentInventory.level_1_critical.length > 0">
-      <h4 class="group-title critical">
-        📌 Nivel 1: Documentos Críticos
+    <!-- 1. Reclamo y Respuesta -->
+    <div class="document-group" v-if="getDocumentsByCategory('reclamo_respuesta').length > 0">
+      <h4 class="group-title reclamo-respuesta">
+        📋 1. Reclamo y Respuesta
       </h4>
+      <p class="group-description">Documentos relacionados con el reclamo realizado y la respuesta de la empresa</p>
       <div class="documents-list">
         <div 
-          v-for="doc in documentInventory.level_1_critical" 
+          v-for="doc in getDocumentsByCategory('reclamo_respuesta')" 
           :key="doc.file_id"
           class="document-item"
         >
@@ -31,6 +32,7 @@
               <option value="TABLA_CALCULO">Tabla de Cálculo</option>
               <option value="EVIDENCIA_FOTOGRAFICA">Evidencia Fotográfica</option>
               <option value="GRAFICO_CONSUMO">Gráfico de Consumo</option>
+              <option value="INFORME_CNR">Informe CNR</option>
               <option value="OTROS">Otros</option>
             </select>
             <button @click="verDocumento(doc)" class="btn-view">Ver</button>
@@ -39,19 +41,20 @@
       </div>
     </div>
 
-    <!-- Nivel 2: Soportantes -->
-    <div class="document-group" v-if="documentInventory.level_2_supporting.length > 0">
-      <h4 class="group-title supporting">
-        📎 Nivel 2: Documentos Soportantes
+    <!-- 2. Informe de Laboratorio y Evidencias -->
+    <div class="document-group" v-if="getDocumentsByCategory('informe_evidencias').length > 0">
+      <h4 class="group-title informe-evidencia">
+        🔬 2. Informe de Laboratorio y Evidencias
       </h4>
+      <p class="group-description">Informes técnicos y evidencias que justifican la decisión de la empresa</p>
       <div class="documents-list">
         <div 
-          v-for="doc in documentInventory.level_2_supporting" 
+          v-for="doc in getDocumentsByCategory('informe_evidencias')" 
           :key="doc.file_id"
           class="document-item"
         >
           <div class="doc-info">
-            <span class="doc-icon">📎</span>
+            <span class="doc-icon">🔬</span>
             <div class="doc-details">
               <div class="doc-name">{{ doc.standardized_name || doc.original_name }}</div>
               <div class="doc-original">Original: {{ doc.original_name }}</div>
@@ -68,6 +71,7 @@
               <option value="TABLA_CALCULO">Tabla de Cálculo</option>
               <option value="EVIDENCIA_FOTOGRAFICA">Evidencia Fotográfica</option>
               <option value="GRAFICO_CONSUMO">Gráfico de Consumo</option>
+              <option value="INFORME_CNR">Informe CNR</option>
               <option value="OTROS">Otros</option>
             </select>
             <button @click="verDocumento(doc)" class="btn-view">Ver</button>
@@ -76,10 +80,88 @@
       </div>
     </div>
 
-    <!-- Nivel 0: Ausentes -->
-    <div class="document-group" v-if="documentInventory.level_0_missing.length > 0">
+    <!-- 3. Historial de Consumo y Cálculos -->
+    <div class="document-group" v-if="getDocumentsByCategory('historial_calculos').length > 0">
+      <h4 class="group-title historial-calculos">
+        📊 3. Historial de Consumo y Cálculos
+      </h4>
+      <p class="group-description">Documentos con cálculos realizados y gráficos de consumo histórico</p>
+      <div class="documents-list">
+        <div 
+          v-for="doc in getDocumentsByCategory('historial_calculos')" 
+          :key="doc.file_id"
+          class="document-item"
+        >
+          <div class="doc-info">
+            <span class="doc-icon">📊</span>
+            <div class="doc-details">
+              <div class="doc-name">{{ doc.standardized_name || doc.original_name }}</div>
+              <div class="doc-original">Original: {{ doc.original_name }}</div>
+            </div>
+          </div>
+          <div class="doc-actions">
+            <select 
+              :value="doc.type" 
+              @change="actualizarTipoDocumento(doc.file_id, $event.target.value, doc)"
+              class="type-select"
+            >
+              <option value="CARTA_RESPUESTA">Carta de Respuesta</option>
+              <option value="ORDEN_TRABAJO">Orden de Trabajo</option>
+              <option value="TABLA_CALCULO">Tabla de Cálculo</option>
+              <option value="EVIDENCIA_FOTOGRAFICA">Evidencia Fotográfica</option>
+              <option value="GRAFICO_CONSUMO">Gráfico de Consumo</option>
+              <option value="INFORME_CNR">Informe CNR</option>
+              <option value="OTROS">Otros</option>
+            </select>
+            <button @click="verDocumento(doc)" class="btn-view">Ver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Otros -->
+    <div class="document-group" v-if="getDocumentsByCategory('otros').length > 0">
+      <h4 class="group-title otros">
+        📁 4. Otros Documentos
+      </h4>
+      <p class="group-description">Documentos adicionales que no encajan en las categorías anteriores</p>
+      <div class="documents-list">
+        <div 
+          v-for="doc in getDocumentsByCategory('otros')" 
+          :key="doc.file_id"
+          class="document-item"
+        >
+          <div class="doc-info">
+            <span class="doc-icon">📁</span>
+            <div class="doc-details">
+              <div class="doc-name">{{ doc.standardized_name || doc.original_name }}</div>
+              <div class="doc-original">Original: {{ doc.original_name }}</div>
+            </div>
+          </div>
+          <div class="doc-actions">
+            <select 
+              :value="doc.type" 
+              @change="actualizarTipoDocumento(doc.file_id, $event.target.value, doc)"
+              class="type-select"
+            >
+              <option value="CARTA_RESPUESTA">Carta de Respuesta</option>
+              <option value="ORDEN_TRABAJO">Orden de Trabajo</option>
+              <option value="TABLA_CALCULO">Tabla de Cálculo</option>
+              <option value="EVIDENCIA_FOTOGRAFICA">Evidencia Fotográfica</option>
+              <option value="GRAFICO_CONSUMO">Gráfico de Consumo</option>
+              <option value="INFORME_CNR">Informe CNR</option>
+              <option value="OTROS">Otros</option>
+            </select>
+            <button @click="verDocumento(doc)" class="btn-view">Ver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentos Ausentes (si existen) -->
+    <div class="document-group" v-if="documentInventory.level_0_missing && documentInventory.level_0_missing.length > 0">
       <h4 class="group-title missing">
-        ⚠️ Nivel 0: Documentos Ausentes
+        ⚠️ Documentos Ausentes
       </h4>
       <div class="documents-list">
         <div 
@@ -139,8 +221,16 @@
               alt="Vista previa"
             />
             
+            <!-- DOCX Viewer (converted to PDF) -->
+            <iframe
+              v-if="documentUrl && !loadingDocument && !documentError && isDocx"
+              :src="documentUrl"
+              class="pdf-viewer"
+              frameborder="0"
+            ></iframe>
+            
             <!-- Fallback para otros tipos -->
-            <div v-if="documentUrl && !loadingDocument && !documentError && !isPdf && !isImage" class="other-document">
+            <div v-if="documentUrl && !loadingDocument && !documentError && !isPdf && !isImage && !isDocx" class="other-document">
               <p>📄 Documento: {{ documentoSeleccionado.original_name }}</p>
               <a :href="documentUrl" target="_blank" class="btn-download">
                 Descargar Documento
@@ -200,6 +290,11 @@ export default {
       const name = this.documentoSeleccionado.original_name || ''
       const ext = name.toLowerCase().split('.').pop()
       return ['jpg', 'jpeg', 'png', 'gif'].includes(ext)
+    },
+    isDocx() {
+      if (!this.documentoSeleccionado) return false
+      const name = this.documentoSeleccionado.original_name || ''
+      return name.toLowerCase().endsWith('.docx')
     }
   },
   watch: {
@@ -213,6 +308,31 @@ export default {
     }
   },
   methods: {
+    getDocumentsByCategory(category) {
+      // Obtener documentos de la categoría funcional
+      if (this.documentInventory[category] && Array.isArray(this.documentInventory[category])) {
+        return this.documentInventory[category]
+      }
+      // Fallback: si no hay categorías funcionales, generar desde estructura antigua
+      return this.generateFromOldStructure(category)
+    },
+    generateFromOldStructure(category) {
+      // Función helper para generar categorías desde estructura antigua si es necesario
+      const allDocs = [
+        ...(this.documentInventory.level_1_critical || []),
+        ...(this.documentInventory.level_2_supporting || [])
+      ]
+      
+      const categoryMap = {
+        'reclamo_respuesta': ['CARTA_RESPUESTA'],
+        'informe_evidencias': ['INFORME_CNR', 'EVIDENCIA_FOTOGRAFICA', 'ORDEN_TRABAJO'],
+        'historial_calculos': ['TABLA_CALCULO', 'GRAFICO_CONSUMO'],
+        'otros': ['OTROS']
+      }
+      
+      const types = categoryMap[category] || []
+      return allDocs.filter(doc => types.includes(doc.type))
+    },
     async actualizarTipoDocumento(fileId, nuevoTipo, doc) {
       // Preguntar si quiere personalizar el nombre
       const tipoNombres = {
@@ -262,9 +382,10 @@ export default {
       try {
         // Construir URL del endpoint de preview
         const fileId = this.documentoSeleccionado.file_id
+        // DOCX ahora se convierte automáticamente a PDF en el backend
         const apiUrl = `http://localhost:8000/api/casos/${this.caseId}/documentos/${fileId}/preview`
         
-        // Para PDFs e imágenes, usar directamente la URL
+        // Para PDFs, imágenes y DOCX (convertido a PDF), usar directamente la URL
         this.documentUrl = apiUrl
         this.loadingDocument = false
       } catch (error) {
@@ -306,19 +427,36 @@ export default {
   border-radius: 4px;
 }
 
-.group-title.critical {
-  background: #ffebee;
-  color: #c62828;
-}
-
-.group-title.supporting {
+.group-title.reclamo-respuesta {
   background: #e3f2fd;
   color: #1565c0;
 }
 
-.group-title.missing {
+.group-title.informe-evidencia {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.group-title.historial-calculos {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.group-title.otros {
   background: #fff3e0;
-  color: #e65100;
+  color: #f57c00;
+}
+
+.group-title.missing {
+  background: #ffebee;
+  color: #c62828;
+}
+
+.group-description {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+  font-style: italic;
 }
 
 .documents-list {
@@ -540,6 +678,7 @@ export default {
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
+
 
 .other-document {
   text-align: center;

@@ -75,6 +75,11 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
 }
 
 .app-header h1 {
@@ -133,6 +138,7 @@ body {
   max-width: 1400px;
   width: 100%;
   margin: 0 auto;
+  margin-top: 70px; /* Espacio para header fijo */
 }
 </style>
 
