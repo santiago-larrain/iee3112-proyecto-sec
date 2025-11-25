@@ -93,28 +93,46 @@ def rule_check_cim_validation(edn: Dict[str, Any]) -> Dict[str, Any]:
     C.2.1. Validación del CIM (Consumo Índice Mensual)
     Compara el CIM aplicado con el promedio histórico del cliente.
     """
-    doc_inventory = edn.get("document_inventory", {})
+    # Consumir desde consolidated_facts (fact-centric)
+    features = edn.get("consolidated_facts", {})
+    tiene_historial = features.get("historial_12_meses_disponible", False)
+    tiene_grafico = features.get("tiene_grafico_consumo", False)
     
-    # Buscar tabla de cálculo
-    calculo_docs = [
-        doc for doc in doc_inventory.get("level_1_critical", [])
-        if doc.get("type") == DocumentType.TABLA_CALCULO.value
-    ]
+    status = ChecklistStatus.REVISION_MANUAL.value
+    evidence = "CIM no disponible o no se puede comparar con histórico"
+    evidence_data = None
     
-    if calculo_docs:
-        # Por ahora, asumir CIM razonable si existe tabla
-        # En el futuro, extraer CIM y comparar con histórico
+    if tiene_historial and tiene_grafico:
+        # Si hay historial y gráfico, asumir que se puede validar
+        # En el futuro, se puede extraer CIM y comparar con histórico
         status = ChecklistStatus.CUMPLE.value
-        evidence = "CIM Razonable (623 kWh vs Histórico 600 kWh)"  # Placeholder
-        evidence_data = {
-            "file_id": calculo_docs[0].get("file_id"),
-            "page_index": 0,
-            "coordinates": None
-        }
+        evidence = "Historial de 12 meses disponible para validación de CIM"
+        
+        # Obtener evidencia desde evidence_map
+        evidence_map = edn.get("evidence_map", {})
+        if "historial_12_meses_disponible" in evidence_map and evidence_map["historial_12_meses_disponible"]:
+            primera_evidencia = evidence_map["historial_12_meses_disponible"][0]
+            evidence_data = {
+                "file_id": primera_evidencia.get("documento") or primera_evidencia.get("archivo"),
+                "page_index": primera_evidencia.get("pagina", 0),
+                "coordinates": primera_evidencia.get("coordinates"),
+                "snippet": primera_evidencia.get("snippet")
+            }
     else:
-        status = ChecklistStatus.REVISION_MANUAL.value
-        evidence = "CIM no disponible o no se puede comparar con histórico"
-        evidence_data = None
+        # Fallback: buscar en documentos si no hay features
+        doc_inventory = edn.get("document_inventory", {})
+        calculo_docs = [
+            doc for doc in doc_inventory.get("level_1_critical", [])
+            if doc.get("type") == DocumentType.TABLA_CALCULO.value
+        ]
+        if calculo_docs:
+            status = ChecklistStatus.REVISION_MANUAL.value
+            evidence = "Historial no extraído automáticamente - Requiere revisión manual"
+            evidence_data = {
+                "file_id": calculo_docs[0].get("file_id"),
+                "page_index": 0,
+                "coordinates": None
+            }
     
     return {
         "status": status,
@@ -128,28 +146,47 @@ def rule_check_retroactive_period(edn: Dict[str, Any]) -> Dict[str, Any]:
     C.2.2. Periodo Retroactivo
     Verifica que el periodo de cobro retroactivo no exceda los 12 meses.
     """
-    doc_inventory = edn.get("document_inventory", {})
+    # Consumir desde consolidated_facts (fact-centric)
+    features = edn.get("consolidated_facts", {})
+    periodo_meses = features.get("periodo_meses")
     
-    # Buscar tabla de cálculo
-    calculo_docs = [
-        doc for doc in doc_inventory.get("level_1_critical", [])
-        if doc.get("type") == DocumentType.TABLA_CALCULO.value
-    ]
+    status = ChecklistStatus.REVISION_MANUAL.value
+    evidence = "Periodo de cobro no disponible o no se puede validar"
+    evidence_data = None
     
-    if calculo_docs:
-        # Por ahora, asumir periodo normativo si existe tabla
-        # En el futuro, extraer fechas de inicio y fin de cobro
-        status = ChecklistStatus.CUMPLE.value
-        evidence = "Periodo Normativo (12 meses)"
-        evidence_data = {
-            "file_id": calculo_docs[0].get("file_id"),
-            "page_index": 0,
-            "coordinates": None
-        }
+    if periodo_meses is not None:
+        if periodo_meses <= 12:
+            status = ChecklistStatus.CUMPLE.value
+            evidence = f"Periodo Normativo ({periodo_meses} meses)"
+        else:
+            status = ChecklistStatus.NO_CUMPLE.value
+            evidence = f"Periodo Excede Normativo ({periodo_meses} meses > 12 meses) - Causal de Instrucción"
+        
+        # Obtener evidencia desde evidence_map
+        evidence_map = edn.get("evidence_map", {})
+        if "periodo_meses" in evidence_map and evidence_map["periodo_meses"]:
+            primera_evidencia = evidence_map["periodo_meses"][0]
+            evidence_data = {
+                "file_id": primera_evidencia.get("documento") or primera_evidencia.get("archivo"),
+                "page_index": primera_evidencia.get("pagina", 0),
+                "coordinates": primera_evidencia.get("coordinates"),
+                "snippet": primera_evidencia.get("snippet")
+            }
     else:
-        status = ChecklistStatus.REVISION_MANUAL.value
-        evidence = "Periodo de cobro no disponible o no se puede validar"
-        evidence_data = None
+        # Fallback: buscar en documentos si no hay features
+        doc_inventory = edn.get("document_inventory", {})
+        calculo_docs = [
+            doc for doc in doc_inventory.get("level_1_critical", [])
+            if doc.get("type") == DocumentType.TABLA_CALCULO.value
+        ]
+        if calculo_docs:
+            status = ChecklistStatus.REVISION_MANUAL.value
+            evidence = "Periodo no extraído automáticamente - Requiere revisión manual"
+            evidence_data = {
+                "file_id": calculo_docs[0].get("file_id"),
+                "page_index": 0,
+                "coordinates": None
+            }
     
     return {
         "status": status,

@@ -107,16 +107,40 @@ class Checklist(BaseModel):
     class Config:
         extra = "allow"  # Permitir campos adicionales
 
+class EvidenceEntry(BaseModel):
+    """Entrada individual en el mapa de evidencias"""
+    tipo: str  # "texto", "foto", "imagen"
+    documento: Optional[str] = None  # Nombre del documento o file_id
+    archivo: Optional[str] = None  # Nombre del archivo (para fotos)
+    pagina: Optional[int] = None  # Número de página (0-based o 1-based según contexto)
+    snippet: Optional[str] = None  # Fragmento de texto extraído exacto
+    descripcion: Optional[str] = None  # Descripción de la evidencia
+    etiqueta: Optional[str] = None  # Etiqueta para fotos (ej: "irregularidad_medidor")
+    coordinates: Optional[List[float]] = None  # [x, y, width, height] para bbox
+
+class EvidenceMap(BaseModel):
+    """Mapa que vincula cada fact con su fuente exacta"""
+    # El mapa es un diccionario donde cada key es el nombre de un feature
+    # y el value es una lista de EvidenceEntry
+    # Ejemplo: {"periodo_meses": [EvidenceEntry(...)], "monto_cnr": [EvidenceEntry(...)]}
+    pass  # Se implementa como Dict[str, List[EvidenceEntry]] en el modelo principal
+
 class ExpedienteDigitalNormalizado(BaseModel):
     compilation_metadata: CompilationMetadata
     unified_context: UnifiedContext
     document_inventory: DocumentInventory
+    consolidated_facts: Optional[Dict[str, Any]] = None  # Features consolidados (alias: features)
+    evidence_map: Optional[Dict[str, List[Dict[str, Any]]]] = None  # Mapa de evidencias (alias: evidencias)
     checklist: Optional[Checklist] = None
     materia: Optional[str] = None
     monto_disputa: Optional[float] = None
     empresa: Optional[str] = None
     fecha_ingreso: Optional[str] = None
     alertas: Optional[List[str]] = None  # ["Electrodependiente", "Reincidente", etc.]
+    
+    class Config:
+        # Permitir acceso por alias
+        populate_by_name = True
 
 class CaseSummary(BaseModel):
     case_id: str

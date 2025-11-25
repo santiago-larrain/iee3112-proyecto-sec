@@ -222,6 +222,22 @@ class RuleEngine:
         try:
             result = rule_func(edn)
             
+            # Construir evidencias para la regla desde evidence_map
+            evidence_map = edn.get("evidence_map", {})
+            evidencias_regla = construir_evidencias_para_regla(rule_ref, result, evidence_map)
+            
+            # Mejorar evidence_data con evidencias del mapa
+            evidence_data = result.get("evidence_data")
+            if evidencias_regla and not evidence_data:
+                # Si no hay evidence_data pero sí evidencias en el mapa, usar la primera
+                primera_evidencia = evidencias_regla[0]
+                evidence_data = {
+                    "file_id": primera_evidencia.get("documento") or primera_evidencia.get("archivo"),
+                    "page_index": primera_evidencia.get("pagina", 0),
+                    "coordinates": primera_evidencia.get("coordinates"),
+                    "snippet": primera_evidencia.get("snippet")
+                }
+            
             # Construir ChecklistItem
             return ChecklistItem(
                 id=item_config.get("id", ""),
@@ -232,7 +248,7 @@ class RuleEngine:
                 description=item_config.get("description", ""),
                 validated=False,
                 rule_ref=rule_ref,
-                evidence_data=result.get("evidence_data")  # Datos con deep linking
+                evidence_data=evidence_data  # Datos con deep linking
             )
         except Exception as e:
             print(f"Error ejecutando regla {rule_ref}: {e}")
@@ -286,4 +302,55 @@ class RuleEngine:
             traceback.print_exc()
             # Por defecto, asumir CNR
             return "CNR"
+
+
+def construir_evidencias_para_regla(
+    rule_ref: str,
+    result: Dict[str, Any],
+    evidence_map: Dict[str, List[Dict[str, Any]]]
+) -> List[Dict[str, Any]]:
+    """
+    Junta las evidencias asociadas a los features usados en una regla.
+    
+    Args:
+        rule_ref: Referencia de la regla (ej: "RULE_CHECK_PERIODO_MESES")
+        result: Resultado de la ejecución de la regla
+        evidence_map: Mapa de evidencias del EDN
+        
+    Returns:
+        Lista de evidencias asociadas a la regla
+    """
+    evidencias_regla = []
+    
+    # Mapeo de reglas a features que usan
+    # Esto se puede hacer más sofisticado en el futuro
+    rule_to_features = {
+        "RULE_CHECK_RETROACTIVE_PERIOD": ["periodo_meses", "fecha_inicio", "fecha_termino"],
+        "RULE_CHECK_CIM_VALIDATION": ["historial_12_meses_disponible", "tiene_grafico_consumo"],
+        "RULE_CHECK_FINDING_CONSISTENCY": ["origen", "tiene_fotos_irregularidad"],
+        # Agregar más mapeos según sea necesario
+    }
+    
+    # Obtener features usados por esta regla
+    features_usados = rule_to_features.get(rule_ref, [])
+    
+    # Si no hay mapeo específico, intentar inferir desde el resultado
+    if not features_usados:
+        # Buscar en el evidence del resultado
+        evidence_text = result.get("evidence", "").lower()
+        if "periodo" in evidence_text or "meses" in evidence_text:
+            features_usados = ["periodo_meses"]
+        elif "grafico" in evidence_text or "historial" in evidence_text:
+            features_usados = ["tiene_grafico_consumo", "historial_12_meses_disponible"]
+        elif "origen" in evidence_text or "bypass" in evidence_text:
+            features_usados = ["origen"]
+        elif "monto" in evidence_text or "cnr" in evidence_text:
+            features_usados = ["monto_cnr"]
+    
+    # Recolectar evidencias de los features usados
+    for feature in features_usados:
+        if feature in evidence_map:
+            evidencias_regla.extend(evidence_map[feature])
+    
+    return evidencias_regla
 

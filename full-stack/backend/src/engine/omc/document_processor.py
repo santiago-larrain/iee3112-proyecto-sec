@@ -14,6 +14,8 @@ from .docx_extractor import DOCXExtractor
 from .document_classifier import DocumentClassifier
 from .entity_extractor import EntityExtractor
 from .document_categorizer import add_functional_categories
+from .fact_extractor import construir_features
+from .strategy_selector import extraer_desde_fuentes
 
 logger = logging.getLogger(__name__)
 
@@ -147,7 +149,7 @@ class DocumentProcessor:
         # Agregar categorías funcionales al inventario
         document_inventory = add_functional_categories(document_inventory)
         
-        # Construir EDN
+        # Construir EDN base
         edn = {
             'compilation_metadata': {
                 'case_id': case_id,
@@ -156,8 +158,64 @@ class DocumentProcessor:
                 'tipo_caso': tipo_caso
             },
             'unified_context': unified_context,
-            'document_inventory': document_inventory
+            'document_inventory': document_inventory,
+            'materia': None,  # Se puede extraer de metadatos
+            'monto_disputa': max_amount,
+            'empresa': None,  # Se puede extraer de metadatos
+            'fecha_ingreso': None  # Se puede extraer de metadatos
         }
+        
+        # Fase de Extracción de Features (Fact-Centric)
+        # Consolidar texto de todos los documentos
+        texto_normalizado = self._consolidar_texto_documentos(document_inventory, case_folder)
+        
+        # Separar boletas y fotos
+        boletas = [
+            doc for doc in document_inventory.get('level_1_critical', [])
+            if 'boleta' in doc.get('original_name', '').lower()
+        ]
+        fotos = [
+            doc for doc in document_inventory.get('level_2_supporting', [])
+            if doc.get('type') == 'EVIDENCIA_FOTOGRAFICA'
+        ]
+        
+        # Construir features consolidados
+        try:
+            consolidated_facts, evidence_map = construir_features(
+                expediente=edn,
+                texto_normalizado=texto_normalizado,
+                boletas=boletas,
+                fotos=fotos
+            )
+            
+            # Aplicar estrategia de selección de fuentes (para gráfico, etc.)
+            features_fuentes, evidencias_fuentes = extraer_desde_fuentes(
+                documentos_procesados=document_inventory.get('level_1_critical', []) + 
+                                     document_inventory.get('level_2_supporting', []),
+                expediente=edn
+            )
+            
+            # Consolidar features (prioridad: fact_extractor > strategy_selector)
+            if features_fuentes:
+                for key, value in features_fuentes.items():
+                    if key not in consolidated_facts:
+                        consolidated_facts[key] = value
+            
+            # Consolidar evidencias
+            if evidencias_fuentes:
+                for key, value in evidencias_fuentes.items():
+                    if key not in evidence_map:
+                        evidence_map[key] = value
+            
+            # Agregar al EDN
+            edn['consolidated_facts'] = consolidated_facts
+            edn['evidence_map'] = evidence_map
+            
+        except Exception as e:
+            logger.error(f"Error en extracción de features: {e}")
+            # Continuar sin features si hay error
+            edn['consolidated_facts'] = {}
+            edn['evidence_map'] = {}
         
         return edn
     
@@ -294,4 +352,48 @@ class DocumentProcessor:
             tags.append('instalacion')
         
         return tags if tags else ['general']
+    
+    def _consolidar_texto_documentos(
+        self, 
+        document_inventory: Dict[str, Any], 
+        case_folder: Path
+    ) -> str:
+        """
+        Consolida el texto de todos los documentos procesados
+        """
+        textos = []
+        
+        # Procesar documentos críticos
+        for doc in document_inventory.get('level_1_critical', []):
+            file_id = doc.get('file_id')
+            file_path = case_folder / doc.get('file_path', '')
+            
+            if file_path.exists():
+                try:
+                    if file_path.suffix.lower() == '.pdf':
+                        content = self.pdf_extractor.extract_text(file_path, include_positions=False)
+                        if content:
+                            textos.append(content)
+                    elif file_path.suffix.lower() == '.docx':
+                        content = self.docx_extractor.extract_text(file_path)
+                        if content:
+                            textos.append(content)
+                except Exception as e:
+                    logger.warning(f"Error extrayendo texto de {file_path}: {e}")
+        
+        # Procesar documentos soportantes (solo algunos tipos)
+        tipos_soportantes_texto = ['INFORME_CNR', 'GRAFICO_CONSUMO']
+        for doc in document_inventory.get('level_2_supporting', []):
+            if doc.get('type') in tipos_soportantes_texto:
+                file_path = case_folder / doc.get('file_path', '')
+                if file_path.exists():
+                    try:
+                        if file_path.suffix.lower() == '.pdf':
+                            content = self.pdf_extractor.extract_text(file_path, include_positions=False)
+                            if content:
+                                textos.append(content)
+                    except Exception as e:
+                        logger.warning(f"Error extrayendo texto de {file_path}: {e}")
+        
+        return '\n\n'.join(textos)
 
