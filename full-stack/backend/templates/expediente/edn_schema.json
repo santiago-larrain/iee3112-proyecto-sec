@@ -1,0 +1,30 @@
+{
+  "compilation_metadata": {
+    "case_id": null,
+    "processing_timestamp": null,
+    "status": null,
+    "tipo_caso": null
+  },
+  "unified_context": {
+    "rut_client": null,
+    "client_name": null,
+    "service_nis": null,
+    "address_standard": null,
+    "commune": null,
+    "email": null,
+    "phone": null
+  },
+  "document_inventory": {
+    "level_1_critical": [],
+    "level_2_supporting": [],
+    "level_0_missing": [],
+    "reclamo_respuesta": [],
+    "informe_evidencias": [],
+    "historial_calculos": [],
+    "otros": []
+  },
+  "checklist": null,
+  "resolucion": null,
+  "alertas": []
+}
+

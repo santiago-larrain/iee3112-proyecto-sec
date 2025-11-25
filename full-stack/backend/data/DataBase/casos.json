@@ -1,0 +1,113 @@
+[
+  {
+    "id": 1,
+    "case_id": "230125-000509",
+    "persona_id": 1,
+    "suministro_id": 1,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2023-01-25",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 2,
+    "case_id": "231220-000557",
+    "persona_id": 2,
+    "suministro_id": 2,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2023-12-20",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 3,
+    "case_id": "240108-000010",
+    "persona_id": 3,
+    "suministro_id": 3,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-08",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 4,
+    "case_id": "240110-000679",
+    "persona_id": 4,
+    "suministro_id": 4,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-10",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 5,
+    "case_id": "240125-000595",
+    "persona_id": 5,
+    "suministro_id": 5,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-25",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 6,
+    "case_id": "240126-000132",
+    "persona_id": 6,
+    "suministro_id": 6,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-01-26",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 7,
+    "case_id": "240205-000393",
+    "persona_id": 7,
+    "suministro_id": 7,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-02-05",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 8,
+    "case_id": "240320-000178",
+    "persona_id": 8,
+    "suministro_id": 8,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-03-20",
+    "estado": "PENDIENTE"
+  },
+  {
+    "id": 9,
+    "case_id": "240322-000010",
+    "persona_id": 9,
+    "suministro_id": 9,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-03-22",
+    "estado": "CERRADO",
+    "fecha_cierre": "2025-11-25T04:39:06.660Z"
+  },
+  {
+    "id": 10,
+    "case_id": "240327-000180",
+    "persona_id": 10,
+    "suministro_id": 10,
+    "empresa": null,
+    "materia": "CNR",
+    "monto_disputa": null,
+    "fecha_ingreso": "2024-03-27",
+    "estado": "PENDIENTE"
+  }
+]
