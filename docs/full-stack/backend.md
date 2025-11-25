@@ -10,7 +10,10 @@ El backend del sistema está implementado en **Python 3.11+** utilizando el fram
 backend/
 ├── main.py                    # Punto de entrada FastAPI
 ├── requirements.txt           # Dependencias Python
+├── README.md                  # Documentación del backend
 ├── src/                        # Código fuente principal
+│   ├── __init__.py
+│   ├── config.py              # Configuración de rutas y directorios
 │   ├── models.py              # Modelos Pydantic (EDN, CaseSummary, Checklist)
 │   ├── engine/                # Motores de procesamiento
 │   │   ├── omc/               # Objeto Maestro de Compilación
@@ -18,33 +21,64 @@ backend/
 │   │   │   ├── pdf_extractor.py
 │   │   │   ├── docx_extractor.py
 │   │   │   ├── document_classifier.py
+│   │   │   ├── document_categorizer.py  # Categorización funcional de documentos
 │   │   │   ├── entity_extractor.py
 │   │   │   ├── fact_extractor.py        # Extracción de features (fact-centric)
-│   │   │   └── strategy_selector.py      # Selección de estrategia de fuentes
+│   │   │   ├── strategy_selector.py      # Selección de estrategia de fuentes
+│   │   │   ├── create_json_database.py  # Script para poblar BD desde casos
+│   │   │   └── README.md                # Documentación del OMC
 │   │   ├── min/               # Motor de Inferencia Normativa
 │   │   │   ├── rule_engine.py
+│   │   │   ├── checklist_generator.py   # Generador de checklist
 │   │   │   └── rules/
+│   │   │       ├── __init__.py
 │   │   │       ├── base_rules.py
 │   │   │       └── cnr_rules.py
 │   │   └── mgr/               # Motor de Generación de Resoluciones
 │   │       └── resolucion_generator.py
 │   ├── routes/                 # Endpoints de la API
+│   │   ├── __init__.py
 │   │   └── casos.py
-│   ├── generators/             # Generadores de contenido
-│   │   └── checklist_generator.py
 │   ├── utils/                  # Utilidades compartidas
-│   ├── scripts/                # Scripts de procesamiento
-│   └── database/               # Gestores de base de datos
-│       ├── json_db_manager.py
-│       └── db_manager.py
+│   │   ├── __init__.py
+│   │   ├── helpers.py          # Funciones auxiliares
+│   │   ├── docx_to_html.py    # Conversión DOCX a HTML
+│   │   ├── docx_to_pdf.py      # Conversión DOCX a PDF
+│   │   ├── resolucion_pdf.py   # Generación de PDFs de resoluciones
+│   │   └── README_DOCX_CONVERSION.md  # Documentación de conversión DOCX
+│   ├── database/               # Gestores de base de datos
+│   │   ├── __init__.py
+│   │   ├── json_db_manager.py
+│   │   └── db_manager.py
+│   └── scripts/                # Scripts de procesamiento (si existe)
 ├── templates/                   # Plantillas configurables
 │   ├── checklist/             # Configuraciones de checklist (JSON)
+│   │   ├── cnr.json
+│   │   └── template.json
 │   ├── expediente/            # Esquemas EDN
+│   │   └── edn_schema.json
 │   └── resolucion/            # Plantillas de resoluciones (Markdown)
+│       ├── master_instruccion.md
+│       ├── master_improcedente.md
 │       └── snippets/          # Fragmentos de argumentos legales
+│           ├── arg_calculo_erroneo.md
+│           ├── arg_cim_invalido.md
+│           ├── arg_falta_fotos.md
+│           ├── arg_falta_ot.md
+│           └── arg_periodo_excesivo.md
 └── data/                       # Datos y archivos
     ├── DataBase/              # Base de datos JSON relacional
+    │   ├── casos.json
+    │   ├── documentos.json
+    │   ├── edn.json
+    │   ├── personas.json
+    │   └── suministros.json
     ├── Files/                 # Archivos de casos
+    │   └── {case_id}/         # Carpeta por caso
+    │       ├── [documentos del caso]
+    │       └── resoluciones/ # Resoluciones generadas (opcional)
+    ├── temp_pdfs/             # PDFs temporales para previews
+    ├── mock_casos.json        # Casos de prueba
     └── sec_reclamos.db        # Base de datos SQLite (opcional)
 ```
 
@@ -258,6 +292,14 @@ Clasificación heurística de documentos por tipo.
 - `classify_tipo_caso()`: Determina tipo de caso (CNR, CORTE_SUMINISTRO, etc.)
 - Se guarda en `EDN.compilation_metadata.tipo_caso`
 
+#### `document_categorizer.py`
+Categorización funcional de documentos en grupos lógicos.
+
+**Funcionalidad:**
+- Agrupa documentos en categorías funcionales (reclamo_respuesta, informe_evidencias, historial_calculos, otros)
+- Complementa la organización por niveles (level_1_critical, level_2_supporting)
+- Facilita la navegación y presentación de documentos en la UI
+
 #### `entity_extractor.py`
 Extracción de entidades (RUT, NIS, direcciones, montos) usando regex.
 
@@ -347,6 +389,53 @@ Wrapper que delega la generación al Motor de Inferencia Normativa (MIN).
 - Convierte `Checklist` (Pydantic) a diccionario para compatibilidad con el frontend
 - Ubicación: `src/engine/min/checklist_generator.py`
 
+### 3.8. `src/config.py` - Configuración de Rutas
+
+**Propósito:** Centraliza la configuración de rutas y directorios del sistema.
+
+**Constantes Principales:**
+- `BACKEND_ROOT`: Raíz del directorio backend
+- `DATA_DIR`: Directorio de datos (`data/`)
+- `DATABASE_DIR`: Directorio de base de datos JSON (`data/DataBase/`)
+- `FILES_DIR`: Directorio de archivos de casos (`data/Files/`)
+- `TEMP_PDFS_DIR`: Directorio para PDFs temporales (`data/temp_pdfs/`)
+- `TEMPLATES_DIR`: Directorio de plantillas (`templates/`)
+- `CHECKLIST_TEMPLATES_DIR`: Plantillas de checklist (`templates/checklist/`)
+- `RESOLUCION_TEMPLATES_DIR`: Plantillas de resoluciones (`templates/resolucion/`)
+
+**Ventajas:**
+- Rutas centralizadas y fáciles de modificar
+- Evita hardcoding de rutas en múltiples archivos
+- Facilita migración y despliegue
+
+### 3.9. `src/utils/` - Utilidades Compartidas
+
+**Módulos:**
+
+#### `helpers.py`
+Funciones auxiliares reutilizables en todo el sistema.
+
+#### `docx_to_html.py`
+Conversión de documentos DOCX a formato HTML.
+
+**Uso:** Para visualización de documentos Word en el frontend.
+
+#### `docx_to_pdf.py`
+Conversión de documentos DOCX a formato PDF.
+
+**Uso:** Para generar PDFs desde documentos Word procesados.
+
+#### `resolucion_pdf.py`
+Generación de PDFs de resoluciones desde templates Markdown.
+
+**Funcionalidad:**
+- Convierte resoluciones Markdown a PDF
+- Aplica formato y estilos apropiados
+- Genera archivos en `data/temp_pdfs/` para previews
+
+#### `README_DOCX_CONVERSION.md`
+Documentación sobre el proceso de conversión de documentos DOCX.
+
 ### 3.6. `src/engine/mgr/` - Motor de Generación de Resoluciones
 
 #### `resolucion_generator.py`
@@ -358,9 +447,14 @@ Generador de resoluciones desde templates Markdown.
 - `generate_resolucion(case_data, template_type, custom_content)`: Genera resolución completa
 
 **Templates:**
-- `templates/resolucion/master_instruccion.md`
-- `templates/resolucion/master_improcedente.md`
-- `templates/resolucion/snippets/`: Fragmentos de argumentos (arg_falta_fotos.md, etc.)
+- `templates/resolucion/master_instruccion.md`: Template principal para resoluciones de instrucción
+- `templates/resolucion/master_improcedente.md`: Template principal para resoluciones improcedentes
+- `templates/resolucion/snippets/`: Fragmentos de argumentos legales:
+  - `arg_calculo_erroneo.md`: Argumento para cálculo erróneo
+  - `arg_cim_invalido.md`: Argumento para CIM inválido
+  - `arg_falta_fotos.md`: Argumento para falta de fotos
+  - `arg_falta_ot.md`: Argumento para falta de OT
+  - `arg_periodo_excesivo.md`: Argumento para período excesivo
 
 ### 3.7. `src/database/` - Gestores de Base de Datos
 
@@ -371,7 +465,7 @@ Gestor de base de datos JSON relacional (prioritario).
 - `personas.json`: Dict[RUT → Persona]
 - `suministros.json`: Dict["NIS-Comuna" → Suministro]
 - `casos.json`: List[Caso] (solo metadatos)
-- `edn.json`: Dict[case_id → EDN] (EDNs separados)
+- `edn.json`: Dict[case_id → EDN] (EDNs separados, incluye `consolidated_facts` y `evidence_map`)
 - `documentos.json`: List[Documento]
 
 **Métodos:**
@@ -400,6 +494,7 @@ El sistema utiliza una **estrategia híbrida** de persistencia:
    - Ubicación: `backend/data/DataBase/`
    - Archivos: `casos.json`, `edn.json`, `personas.json`, `suministros.json`, `documentos.json`
    - Gestor: `JSONDBManager`
+   - Los EDNs incluyen `consolidated_facts` y `evidence_map` (arquitectura fact-centric)
 
 2. **Base de Datos SQLite** (Opcional - Producción Futura)
    - Ubicación: `backend/data/sec_reclamos.db`
@@ -429,13 +524,14 @@ Inicialmente, los datos se cargaban una sola vez al iniciar, causando que los ca
 
 ## 5. Dependencias Principales
 
-Ver `requirements.txt`:
+Ver `requirements.txt` para lista completa. Dependencias principales:
 - `fastapi`: Framework web
 - `uvicorn`: Servidor ASGI
 - `pydantic`: Validación de datos
 - `pdfplumber`: Extracción de PDFs
 - `python-docx`: Extracción de DOCX
-- `sqlalchemy`: ORM para SQLite
+- `reportlab`: Generación de PDFs (para resoluciones)
+- `sqlalchemy`: ORM para SQLite (opcional)
 - `python-multipart`: Soporte para uploads
 
 ## 6. Configuración y Ejecución

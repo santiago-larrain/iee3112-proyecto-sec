@@ -7,42 +7,76 @@ API REST construida con FastAPI que implementa los tres motores principales del 
 ```
 backend/
 ├── src/
+│   ├── __init__.py
+│   ├── config.py            # Configuración de rutas y directorios
+│   ├── models.py            # Modelos Pydantic (EDN, CaseSummary, Checklist)
 │   ├── engine/              # Motores principales
 │   │   ├── omc/             # Objeto Maestro de Compilación
 │   │   │   ├── document_processor.py    # Procesamiento de documentos
 │   │   │   ├── pdf_extractor.py        # Extracción de PDFs
 │   │   │   ├── docx_extractor.py       # Extracción de DOCX
 │   │   │   ├── document_classifier.py  # Clasificación de documentos
-│   │   │   └── entity_extractor.py     # Extracción de entidades
+│   │   │   ├── document_categorizer.py  # Categorización funcional
+│   │   │   ├── entity_extractor.py     # Extracción de entidades
+│   │   │   ├── fact_extractor.py       # Extracción de features (fact-centric)
+│   │   │   ├── strategy_selector.py     # Selección de estrategia de fuentes
+│   │   │   ├── create_json_database.py # Script para poblar BD
+│   │   │   └── README.md                # Documentación del OMC
 │   │   ├── min/             # Motor de Inferencia Normativa
 │   │   │   ├── rule_engine.py          # Motor de reglas
+│   │   │   ├── checklist_generator.py  # Generador de checklist
 │   │   │   └── rules/                  # Reglas configurables
+│   │   │       ├── __init__.py
 │   │   │       ├── base_rules.py       # Reglas base
 │   │   │       └── cnr_rules.py        # Reglas CNR
 │   │   └── mgr/             # Motor de Generación de Resoluciones
 │   │       └── resolucion_generator.py # Generador de resoluciones
 │   ├── routes/              # Endpoints API
+│   │   ├── __init__.py
 │   │   └── casos.py        # Rutas principales de casos
-│   ├── generators/          # Generadores auxiliares
-│   │   └── checklist_generator.py
 │   ├── database/            # Gestión de datos
+│   │   ├── __init__.py
 │   │   ├── json_db_manager.py
 │   │   └── db_manager.py
 │   ├── utils/               # Utilidades
-│   ├── scripts/             # Scripts de utilidad
-│   └── models.py            # Modelos Pydantic
+│   │   ├── __init__.py
+│   │   ├── helpers.py       # Funciones auxiliares
+│   │   ├── docx_to_html.py # Conversión DOCX a HTML
+│   │   ├── docx_to_pdf.py   # Conversión DOCX a PDF
+│   │   ├── resolucion_pdf.py # Generación de PDFs de resoluciones
+│   │   └── README_DOCX_CONVERSION.md
+│   └── scripts/             # Scripts de utilidad (si existe)
 ├── templates/                # Plantillas configurables
 │   ├── checklist/          # Configuraciones de checklist (JSON)
+│   │   ├── cnr.json
+│   │   └── template.json
 │   ├── expediente/         # Esquemas EDN
+│   │   └── edn_schema.json
 │   └── resolucion/         # Templates Markdown de resoluciones
 │       ├── master_instruccion.md
 │       ├── master_improcedente.md
 │       └── snippets/        # Fragmentos de argumentos legales
+│           ├── arg_calculo_erroneo.md
+│           ├── arg_cim_invalido.md
+│           ├── arg_falta_fotos.md
+│           ├── arg_falta_ot.md
+│           └── arg_periodo_excesivo.md
 ├── data/                    # Datos persistentes
 │   ├── DataBase/           # Base de datos JSON
+│   │   ├── casos.json
+│   │   ├── documentos.json
+│   │   ├── edn.json
+│   │   ├── personas.json
+│   │   └── suministros.json
 │   ├── Files/              # Archivos de casos
-│   └── mock_casos.json     # Casos de prueba
+│   │   └── {case_id}/      # Carpeta por caso
+│   │       ├── [documentos del caso]
+│   │       └── resoluciones/ # Resoluciones generadas (opcional)
+│   ├── temp_pdfs/          # PDFs temporales para previews
+│   ├── mock_casos.json     # Casos de prueba
+│   └── sec_reclamos.db     # Base de datos SQLite (opcional)
 ├── main.py                  # Punto de entrada
+├── README.md                # Este archivo
 └── requirements.txt         # Dependencias Python
 ```
 
@@ -110,13 +144,15 @@ El backend implementa el patrón **Pipeline & Filters** a través de tres motore
 
 ### OMC (Objeto Maestro de Compilación)
 - **Ubicación**: `src/engine/omc/`
-- **Responsabilidad**: Ingestiona documentos, extrae datos mediante OCR, clasifica documentos y genera el EDN (Expediente Digital Normalizado)
-- **Flujo**: PDF/DOCX → Extracción → Clasificación → EDN JSON
+- **Responsabilidad**: Ingestiona documentos, extrae datos mediante OCR, clasifica documentos, extrae features (fact-centric) y genera el EDN (Expediente Digital Normalizado)
+- **Flujo**: PDF/DOCX → Extracción → Clasificación → Extracción de Features → EDN JSON
+- **Arquitectura Fact-Centric**: Extrae `consolidated_facts` y `evidence_map` para que el MIN opere eficientemente
 
 ### MIN (Motor de Inferencia Normativa)
 - **Ubicación**: `src/engine/min/`
 - **Responsabilidad**: Evalúa el EDN contra reglas Python configurables y genera checklists estructurados
-- **Flujo**: EDN → Reglas → Checklist JSON
+- **Flujo**: EDN → Consume `consolidated_facts` → Reglas → Checklist JSON
+- **Arquitectura Fact-Centric**: Opera sobre `consolidated_facts` en lugar de buscar en documentos
 - **Configuración**: Templates en `templates/checklist/` (ej: `cnr.json`)
 
 ### MGR (Motor de Generación de Resoluciones)
@@ -144,12 +180,14 @@ El backend soporta dos modos mediante el parámetro `mode`:
 
 ## 📚 Dependencias Principales
 
+Ver `requirements.txt` para lista completa. Principales:
+
 - `fastapi` - Framework web
 - `uvicorn` - Servidor ASGI
 - `pydantic` - Validación de datos
 - `pdfplumber` - Extracción de PDFs
 - `python-docx` - Procesamiento de DOCX
-- `reportlab` - Generación de PDFs
+- `reportlab` - Generación de PDFs (para resoluciones)
 
 ## 🔍 Debugging
 
@@ -161,8 +199,9 @@ Para ver logs detallados, el sistema usa el módulo `logging` de Python. Los log
 
 ## 📖 Documentación Adicional
 
-- [Manual de Arquitectura](../../docs/manual_de_uso/3_OMC.md) - Detalles del OMC
-- [Manual de Arquitectura](../../docs/manual_de_uso/6_MIN.md) - Detalles del MIN
+- [Manual de Arquitectura](../../docs/manual_de_uso/3_OMC.md) - Detalles del OMC (incluye fact-centric)
+- [Manual de Arquitectura](../../docs/manual_de_uso/5_EDN.md) - Estructura del EDN (incluye consolidated_facts y evidence_map)
+- [Manual de Arquitectura](../../docs/manual_de_uso/6_MIN.md) - Detalles del MIN (incluye fact-centric)
 - [Manual de Arquitectura](../../docs/manual_de_uso/8_MGR.md) - Detalles del MGR
-- [Documentación Técnica](../../docs/full-stack/backend.md) - Implementación detallada
+- [Documentación Técnica](../../docs/full-stack/backend.md) - Implementación detallada completa
 
