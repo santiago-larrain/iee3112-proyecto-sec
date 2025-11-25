@@ -6,7 +6,7 @@ Este directorio contiene el código fuente completo de la solución full-stack p
 
 - **[Backend README](./backend/README.md)** - Lógica de negocio y motores (OMC, MIN, MGR)
 - **[Frontend README](./frontend/README.md)** - Interfaz de usuario y componentes Vue.js
-- **[Manual de Arquitectura](../docs/manual_de_uso/0_Indice.md)** - Documentación completa de ingeniería básica
+- **[Manual de Arquitectura](../docs/manual_tecnico/0_Indice.md)** - Documentación completa de ingeniería básica
 
 ## 🛠 Stack Tecnológico
 
@@ -72,7 +72,7 @@ Para detalles técnicos profundos sobre cada componente:
 
 - **Backend**: Ver [backend/README.md](./backend/README.md)
 - **Frontend**: Ver [frontend/README.md](./frontend/README.md)
-- **Arquitectura**: Ver [docs/manual_de_uso/](../docs/manual_de_uso/)
+- **Arquitectura**: Ver [docs/manual_tecnico/](../docs/manual_tecnico/)
 - **Implementación**: Ver [docs/full-stack/](../docs/full-stack/)
 
 ## 🔗 Enlaces Útiles

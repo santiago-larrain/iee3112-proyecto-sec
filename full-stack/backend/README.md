@@ -199,9 +199,9 @@ Para ver logs detallados, el sistema usa el módulo `logging` de Python. Los log
 
 ## 📖 Documentación Adicional
 
-- [Manual de Arquitectura](../../docs/manual_de_uso/3_OMC.md) - Detalles del OMC (incluye fact-centric)
-- [Manual de Arquitectura](../../docs/manual_de_uso/5_EDN.md) - Estructura del EDN (incluye consolidated_facts y evidence_map)
-- [Manual de Arquitectura](../../docs/manual_de_uso/6_MIN.md) - Detalles del MIN (incluye fact-centric)
-- [Manual de Arquitectura](../../docs/manual_de_uso/8_MGR.md) - Detalles del MGR
+- [Manual de Arquitectura](../../docs/manual_tecnico/3_OMC.md) - Detalles del OMC (incluye fact-centric)
+- [Manual de Arquitectura](../../docs/manual_tecnico/5_EDN.md) - Estructura del EDN (incluye consolidated_facts y evidence_map)
+- [Manual de Arquitectura](../../docs/manual_tecnico/6_MIN.md) - Detalles del MIN (incluye fact-centric)
+- [Manual de Arquitectura](../../docs/manual_tecnico/8_MGR.md) - Detalles del MGR
 - [Documentación Técnica](../../docs/full-stack/backend.md) - Implementación detallada completa
 

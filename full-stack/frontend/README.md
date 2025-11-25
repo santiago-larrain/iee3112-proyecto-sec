@@ -166,7 +166,7 @@ frontend/
 
 ## 📚 Documentación Adicional
 
-- [Manual de Arquitectura](../../docs/manual_de_uso/7_Checklist.md) - Detalles del Checklist UI
+- [Manual de Arquitectura](../../docs/manual_tecnico/7_Checklist.md) - Detalles del Checklist UI
 - [Documentación Técnica](../../docs/full-stack/frontend.md) - Implementación detallada
 - [Vue.js Docs](https://vuejs.org/) - Documentación oficial
 - [Vite Docs](https://vitejs.dev/) - Documentación de Vite

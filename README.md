@@ -36,7 +36,7 @@ La documentación completa del proyecto está centralizada en el directorio `doc
 
 | Tipo | Documento | Descripción |
 | :--- | :--- | :--- |
-| 📘 **Arquitectura** | **[Manual de Ingeniería](./docs/manual_de_uso/0_Indice.md)** | Visión arquitectónica, principios de diseño y flujos de datos. |
+| 📘 **Arquitectura** | **[Manual de Ingeniería](./docs/manual_tecnico/0_Indice.md)** | Visión arquitectónica, principios de diseño y flujos de datos. |
 | 💻 **Implementación** | **[Guía Full-Stack](./docs/full-stack/)** | Detalles técnicos del código Backend (FastAPI) y Frontend (Vue.js). |
 | ⚖️ **Normativa** | **[Base de Conocimiento](./docs/sec/)** | Documentos oficiales (Manual de Reclamos 2025, Res. Ex. 1952) que sustentan la lógica del MIN. |
 
@@ -45,7 +45,7 @@ La documentación completa del proyecto está centralizada en el directorio `doc
 ```text
 .
 ├── docs/
-│   ├── manual_de_uso/   # 📘 Manual de Arquitectura y Diseño (Ingeniería Básica)
+│   ├── manual_tecnico/   # 📘 Manual de Arquitectura y Diseño (Ingeniería Básica)
 │   ├── full-stack/      # 💻 Documentación de Implementación (Backend/Frontend)
 │   └── sec/             # ⚖️  Base Normativa (PDFs/JSON de reglamentos)
 ├── full-stack/          # 🚀 Código Fuente de la Aplicación
