@@ -6,6 +6,9 @@
 
 El **Motor de Inferencia Normativa (MIN)** es el componente del sistema que **genera automáticamente el checklist de validación** para cada reclamo, evaluando si cumple o no con los requisitos normativos establecidos por la SEC. El MIN transforma el EDN en un checklist estructurado con estados de cumplimiento y evidencia identificada.
 
+**Arquitectura Fact-Centric:**
+El MIN opera sobre `consolidated_facts` (features) en lugar de buscar información dispersa en documentos. Esto permite que las reglas sean simples y eficientes: `if edn.features.periodo_meses > 12: return FAIL`.
+
 ## 6.2. Problema que Resuelve
 
 ### 6.2.1. Antes del MIN
@@ -63,6 +66,8 @@ El **Motor de Inferencia Normativa (MIN)** es el componente del sistema que **ge
 EDN (Expediente Digital Normalizado)
     │
     ├─ compilation_metadata.tipo_caso = "CNR"
+    ├─ consolidated_facts = { "periodo_meses": 6, "monto_cnr": 86500, ... }
+    ├─ evidence_map = { "periodo_meses": [...], "monto_cnr": [...] }
     │
     ▼
 RuleEngine.load_checklist_config("CNR")
@@ -78,38 +83,43 @@ JSON Configuración
     │
     ▼
 Para cada item:
-    ├─ item.rule_ref = "RULE_CHECK_OT_EXISTS"
+    ├─ item.rule_ref = "RULE_CHECK_RETROACTIVE_PERIOD"
     │
     ▼
-RULE_REGISTRY.get("RULE_CHECK_OT_EXISTS")
+RULE_REGISTRY.get("RULE_CHECK_RETROACTIVE_PERIOD")
     │
-    ├─ Retorna: función Python rule_check_ot_exists()
+    ├─ Retorna: función Python rule_check_retroactive_period()
     │
     ▼
-Ejecuta: rule_check_ot_exists(edn)
+Ejecuta: rule_check_retroactive_period(edn)
     │
-    ├─ Analiza: edn.document_inventory
-    ├─ Busca: DocumentType.ORDEN_TRABAJO
+    ├─ Lee: edn.consolidated_facts["periodo_meses"]
+    ├─ Evalúa: if periodo_meses > 12: return NO_CUMPLE
     │
     ▼
 Retorna:
     {
         "status": "CUMPLE",
-        "evidence": "OT Adjunta (Folio 197803311)",
+        "evidence": "Periodo Normativo (6 meses)",
         "evidence_data": {
-            "file_id": "uuid-123",
-            "page_index": 0,
-            "coordinates": [100, 200, 400, 250]
+            "file_id": "Informe_Tecnico.pdf",
+            "page_index": 2,
+            "snippet": "el periodo comprendido entre 10-09-2023 y 15-05-2024"
         }
     }
     │
     ▼
+construir_evidencias_para_regla()
+    │
+    ├─ Vincula evidencias desde evidence_map
+    │
+    ▼
 ChecklistItem generado
-    ├─ id: "B.1"
-    ├─ title: "Existencia de Orden de Trabajo (OT)"
+    ├─ id: "C.2.2"
+    ├─ title: "Periodo Retroactivo"
     ├─ status: CUMPLE
-    ├─ evidence: "OT Adjunta (Folio 197803311)"
-    └─ evidence_data: { file_id, page_index, coordinates }
+    ├─ evidence: "Periodo Normativo (6 meses)"
+    └─ evidence_data: { file_id, page_index, snippet }
 ```
 
 ## 6.4. Separación de Reglas y Configuración
@@ -166,36 +176,39 @@ El MIN separa claramente:
 
 **Ubicación:** `src/engine/min/rules/`
 
-**Estructura de una Regla:**
+**Estructura de una Regla (Fact-Centric):**
 ```python
-def rule_check_ot_exists(edn: Dict[str, Any]) -> Dict[str, Any]:
+def rule_check_retroactive_period(edn: Dict[str, Any]) -> Dict[str, Any]:
     """
-    B.1. Existencia de Orden de Trabajo (OT)
-    Verifica la presencia de una OT en documentos críticos.
+    C.2.2. Periodo Retroactivo
+    Verifica que el periodo de cobro retroactivo no exceda los 12 meses.
     """
-    doc_inventory = edn.get("document_inventory", {})
+    # Consumir desde consolidated_facts (fact-centric)
+    features = edn.get("consolidated_facts", {})
+    periodo_meses = features.get("periodo_meses")
     
-    # Lógica de evaluación
-    ot_docs = [
-        doc for doc in doc_inventory.get("level_1_critical", [])
-        if doc.get("type") == DocumentType.ORDEN_TRABAJO.value
-    ]
+    status = ChecklistStatus.REVISION_MANUAL.value
+    evidence = "Periodo de cobro no disponible"
+    evidence_data = None
     
-    # Determinar estado
-    if ot_docs:
-        status = ChecklistStatus.CUMPLE.value
-        evidence = "OT Adjunta (Folio 197803311)"
-        evidence_data = {
-            "file_id": ot_docs[0].get("file_id"),
-            "page_index": 0,
-            "coordinates": None
-        }
-    else:
-        status = ChecklistStatus.NO_CUMPLE.value
-        evidence = "Falta OT - Imposible acreditar hecho"
-        evidence_data = None
+    if periodo_meses is not None:
+        if periodo_meses <= 12:
+            status = ChecklistStatus.CUMPLE.value
+            evidence = f"Periodo Normativo ({periodo_meses} meses)"
+        else:
+            status = ChecklistStatus.NO_CUMPLE.value
+            evidence = f"Periodo Excede Normativo ({periodo_meses} meses > 12 meses)"
+        
+        # Obtener evidencia desde evidence_map
+        evidence_map = edn.get("evidence_map", {})
+        if "periodo_meses" in evidence_map and evidence_map["periodo_meses"]:
+            primera_evidencia = evidence_map["periodo_meses"][0]
+            evidence_data = {
+                "file_id": primera_evidencia.get("documento"),
+                "page_index": primera_evidencia.get("pagina", 0),
+                "snippet": primera_evidencia.get("snippet")
+            }
     
-    # Retornar resultado
     return {
         "status": status,
         "evidence": evidence,
@@ -205,9 +218,11 @@ def rule_check_ot_exists(edn: Dict[str, Any]) -> Dict[str, Any]:
 
 **Características:**
 - Toma EDN como input
-- Analiza `document_inventory` y `unified_context`
+- **Consume `consolidated_facts`** en lugar de buscar en documentos
+- **Usa `evidence_map`** para vincular evidencias
 - Retorna estado, evidencia y datos con deep linking
 - Independiente y testeable
+- **Simple y eficiente**: No necesita buscar en múltiples documentos
 
 ### 6.4.4. Registro de Reglas
 
@@ -292,9 +307,50 @@ El **Binding** es el proceso mediante el cual el MIN conecta un item de configur
 - Fácil identificar qué regla evalúa qué item
 - Testing independiente de reglas
 
-## 6.7. Decisión de Cumplimiento
+## 6.7. Construcción de Evidencias para Reglas
 
-### 6.7.1. Estados Posibles
+### 6.7.1. Función `construir_evidencias_para_regla()`
+
+**Propósito:** Junta las evidencias asociadas a los features usados en una regla desde el `evidence_map`.
+
+**Ubicación:** `src/engine/min/rule_engine.py`
+
+**Implementación:**
+```python
+def construir_evidencias_para_regla(
+    rule_ref: str,
+    result: Dict[str, Any],
+    evidence_map: Dict[str, List[Dict[str, Any]]]
+) -> List[Dict[str, Any]]:
+    """
+    Junta las evidencias asociadas a los features usados en una regla.
+    """
+    evidencias_regla = []
+    
+    # Mapeo de reglas a features que usan
+    rule_to_features = {
+        "RULE_CHECK_RETROACTIVE_PERIOD": ["periodo_meses", "fecha_inicio", "fecha_termino"],
+        "RULE_CHECK_CIM_VALIDATION": ["historial_12_meses_disponible", "tiene_grafico_consumo"],
+        "RULE_CHECK_FINDING_CONSISTENCY": ["origen", "tiene_fotos_irregularidad"],
+    }
+    
+    # Obtener features usados por esta regla
+    features_usados = rule_to_features.get(rule_ref, [])
+    
+    # Recolectar evidencias de los features usados
+    for feature in features_usados:
+        if feature in evidence_map:
+            evidencias_regla.extend(evidence_map[feature])
+    
+    return evidencias_regla
+```
+
+**Integración en Generación de Checklist:**
+El `RuleEngine` llama a `construir_evidencias_para_regla()` después de ejecutar cada regla, permitiendo que cada item del checklist tenga acceso directo a las evidencias relevantes del `evidence_map`.
+
+## 6.8. Decisión de Cumplimiento
+
+### 6.8.1. Estados Posibles
 
 **`CUMPLE`:**
 - Requisito cumplido según evidencia encontrada
@@ -312,7 +368,7 @@ El **Binding** es el proceso mediante el cual el MIN conecta un item de configur
 - Lógica compleja que requiere revisión humana
 - Confianza del algoritmo baja (< 70%)
 
-### 6.7.2. Lógica de Decisión
+### 6.8.2. Lógica de Decisión
 
 **Ejemplo: Existencia de OT**
 
@@ -340,7 +396,7 @@ def rule_check_ot_exists(edn):
         }
 ```
 
-### 6.7.3. Evidencia con Deep Linking
+### 6.8.3. Evidencia con Deep Linking
 
 Las reglas retornan `evidence_data` con referencias a documentos:
 
@@ -357,13 +413,13 @@ evidence_data = {
 - Resaltar área relevante (futuro)
 - Navegación directa a evidencia
 
-## 6.8. Manejo de Múltiples Tipos de Reclamos
+## 6.9. Manejo de Múltiples Tipos de Reclamos
 
-### 6.8.1. Identificación Automática
+### 6.9.1. Identificación Automática
 
 El OMC determina `tipo_caso` durante el procesamiento y lo guarda en `EDN.compilation_metadata.tipo_caso`.
 
-### 6.8.2. Carga Dinámica de Configuración
+### 6.9.2. Carga Dinámica de Configuración
 
 El MIN usa el `tipo_caso` para cargar el JSON correcto:
 
@@ -378,7 +434,7 @@ def load_checklist_config(self, tipo_caso: str):
         config_file = self.checklist_dir / "template.json"
 ```
 
-### 6.8.3. Agregar Nuevo Tipo de Reclamo
+### 6.9.3. Agregar Nuevo Tipo de Reclamo
 
 **Pasos:**
 1. Crear JSON de configuración en `templates/checklist/{nuevo_tipo}.json`
@@ -391,9 +447,35 @@ def load_checklist_config(self, tipo_caso: str):
 - El flujo de procesamiento no cambia
 - La interfaz de usuario se adapta automáticamente
 
-## 6.9. Ventajas del Enfoque Modular
+## 6.10. Ventajas del Enfoque Fact-Centric
 
-### 6.9.1. Para el Funcionario
+### 6.10.1. Eficiencia
+
+**Antes (Document-Centric):**
+- Las reglas debían buscar información en múltiples documentos
+- Procesamiento repetitivo de documentos en cada regla
+- Lógica compleja para encontrar datos relevantes
+
+**Ahora (Fact-Centric):**
+- Las reglas consumen directamente `consolidated_facts`
+- Procesamiento único de documentos en el OMC
+- Lógica simple: `if features.periodo_meses > 12: return FAIL`
+
+### 6.10.2. Trazabilidad
+
+- Cada feature tiene su fuente exacta en `evidence_map`
+- Snippets permiten verificar rápidamente la evidencia
+- Deep linking directo a documentos y páginas específicas
+
+### 6.10.3. Mantenibilidad
+
+- Separación clara: OMC extrae, MIN evalúa
+- Reglas más simples y fáciles de entender
+- Agregar nuevos features solo requiere actualizar OMC
+
+## 6.11. Ventajas del Enfoque Modular
+
+### 6.11.1. Para el Funcionario
 
 - **Rapidez**: Checklist generado automáticamente en milisegundos
 - **Completitud**: No se olvida ninguna validación
@@ -401,7 +483,7 @@ def load_checklist_config(self, tipo_caso: str):
 - **Acceso Directo**: Links a evidencia sin buscar manualmente
 - **Proceso Uniforme**: Mismo flujo para todos los tipos de reclamos
 
-### 6.9.2. Para el Desarrollo
+### 6.11.2. Para el Desarrollo
 
 - **Mantenibilidad**: Cambiar reglas no requiere tocar JSONs
 - **Testabilidad**: Reglas Python independientes y testeables
@@ -409,14 +491,14 @@ def load_checklist_config(self, tipo_caso: str):
 - **Separación de Responsabilidades**: Estructura (JSON) vs Lógica (Python)
 - **Reutilización**: Reglas base compartidas entre tipos
 
-### 6.9.3. Para la Organización
+### 6.11.3. Para la Organización
 
 - **Escalabilidad**: Fácil agregar nuevos tipos de reclamos
 - **Documentación**: JSONs sirven como documentación viva
 - **Auditoría**: Todas las validaciones están registradas
 - **Evolución**: Reglas pueden mejorarse sin cambiar estructura
 
-## 6.10. Conclusión
+## 6.12. Conclusión
 
 El MIN es el cerebro del sistema de validación, permitiendo que el funcionario se enfoque en la revisión en lugar de recordar reglas. La arquitectura modular (JSONs + Reglas Python) permite agregar nuevos tipos de reclamos sin cambiar código existente, mejorar reglas sin tocar estructura visual, y mantener separación clara entre configuración y lógica. El concepto de binding conecta elegantemente la estructura visual con la lógica de evaluación, garantizando flexibilidad y mantenibilidad.
 

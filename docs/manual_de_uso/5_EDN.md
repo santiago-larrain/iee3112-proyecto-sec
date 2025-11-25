@@ -42,6 +42,8 @@ El EDN actúa como:
   "compilation_metadata": { ... },
   "unified_context": { ... },
   "document_inventory": { ... },
+  "consolidated_facts": { ... },
+  "evidence_map": { ... },
   "checklist": { ... },
   "materia": "Facturación",
   "monto_disputa": 150000.0,
@@ -171,7 +173,128 @@ Documentos requeridos que no se encontraron durante el procesamiento.
 - Guiar la revisión del caso
 - Informar al MIN sobre requisitos no cumplidos
 
-### 5.3.5. `checklist`
+### 5.3.5. `consolidated_facts` (alias: `features`)
+
+**Propósito:** Variables de negocio ya destiladas y consolidadas en un objeto plano.
+
+**Motivación Fact-Centric:**
+El EDN evoluciona de una arquitectura "centrada en documentos" a una arquitectura **"centrada en hechos" (Fact-Centric)**. En lugar de que el MIN busque información dispersa en múltiples documentos, el OMC extrae y consolida los hechos relevantes en `consolidated_facts`, permitiendo que las reglas del MIN sean simples y directas.
+
+**Estructura:**
+```json
+{
+  "periodo_meses": 6,
+  "fecha_inicio": "2023-09-10",
+  "fecha_termino": "2024-05-15",
+  "origen": "conexion_irregular",
+  "descripcion_origen": "bypass",
+  "historial_12_meses_disponible": true,
+  "historial_fuente": "grafico_informe",
+  "tiene_grafico_consumo": true,
+  "grafico_fuente": "Informe_Tecnico.pdf",
+  "tiene_fotos_irregularidad": true,
+  "tiene_foto_medidor": true,
+  "tiene_foto_sello": true,
+  "monto_cnr": 86500,
+  "n_cuotas_totales": 6,
+  "n_cuota_actual": 1,
+  "notificacion_previa_en_boleta": false,
+  "hay_constancia_notarial": false,
+  "hay_certificado_laboratorio": true
+}
+```
+
+**Características:**
+- **Plano**: Estructura de diccionario simple, sin anidación compleja
+- **Normalizado**: Valores ya procesados y listos para evaluación
+- **Completo**: Contiene todas las variables de negocio necesarias para las reglas del MIN
+- **Eficiente**: Permite que las reglas sean simples: `if edn.features.periodo_meses > 12: return FAIL`
+
+**Ejemplo de Uso en Reglas:**
+```python
+def rule_check_retroactive_period(edn: Dict[str, Any]) -> Dict[str, Any]:
+    features = edn.get("consolidated_facts", {})
+    periodo_meses = features.get("periodo_meses")
+    
+    if periodo_meses and periodo_meses > 12:
+        return {"status": "NO_CUMPLE", "evidence": f"Periodo excede 12 meses"}
+    return {"status": "CUMPLE", "evidence": f"Periodo normativo ({periodo_meses} meses)"}
+```
+
+### 5.3.6. `evidence_map` (alias: `evidencias`)
+
+**Propósito:** Mapa que vincula cada *fact* en `consolidated_facts` con su fuente exacta en los documentos.
+
+**Estructura:**
+```json
+{
+  "periodo_meses": [
+    {
+      "tipo": "texto",
+      "documento": "Informe_Tecnico.pdf",
+      "pagina": 2,
+      "snippet": "el periodo comprendido entre 10-09-2023 y 15-05-2024"
+    }
+  ],
+  "origen": [
+    {
+      "tipo": "texto",
+      "documento": "Acta_Inspeccion.pdf",
+      "pagina": 1,
+      "snippet": "se detecta bypass en conductor fase del medidor"
+    }
+  ],
+  "tiene_fotos_irregularidad": [
+    {
+      "tipo": "foto",
+      "archivo": "Foto1.jpg",
+      "etiqueta": "irregularidad_medidor"
+    },
+    {
+      "tipo": "foto",
+      "archivo": "Foto2.jpg",
+      "etiqueta": "sello_roto"
+    }
+  ],
+  "tiene_grafico_consumo": [
+    {
+      "tipo": "imagen",
+      "documento": "Informe_Tecnico.pdf",
+      "pagina": 3,
+      "descripcion": "gráfico de consumo histórico de 12 meses"
+    }
+  ],
+  "monto_cnr": [
+    {
+      "tipo": "texto",
+      "documento": "Boleta_Mayo.pdf",
+      "pagina": 1,
+      "snippet": "Consumos No Registrados: $86.500"
+    }
+  ]
+}
+```
+
+**Campos de una Entrada de Evidencia:**
+- `tipo`: Tipo de evidencia ("texto", "foto", "imagen")
+- `documento`: Nombre del documento o `file_id` donde se encontró
+- `archivo`: Nombre del archivo (para fotos)
+- `pagina`: Número de página donde se encontró (0-based o 1-based según contexto)
+- `snippet`: Fragmento de texto extraído exacto (concepto clave para trazabilidad)
+- `descripcion`: Descripción de la evidencia (para imágenes/gráficos)
+- `etiqueta`: Etiqueta para fotos (ej: "irregularidad_medidor", "sello_roto")
+- `coordinates`: Coordenadas bbox `[x, y, width, height]` para deep linking (opcional)
+
+**Concepto de Snippet:**
+El **snippet** es un fragmento de texto extraído exacto que muestra el contexto donde se encontró un hecho. Esto permite:
+- **Trazabilidad**: Saber exactamente dónde se encontró cada variable
+- **Validación**: El funcionario puede verificar la fuente rápidamente
+- **Deep Linking**: El frontend puede abrir el documento en la página específica y resaltar el área relevante
+
+**Uso en Checklist:**
+El MIN usa `construir_evidencias_para_regla()` para vincular cada item del checklist con las evidencias relevantes del `evidence_map`, permitiendo que cada validación tenga acceso directo a su fuente.
+
+### 5.3.7. `checklist`
 
 **Propósito:** Checklist de validación generado por el MIN.
 
@@ -186,7 +309,7 @@ Documentos requeridos que no se encontraron durante el procesamiento.
 
 **Nota:** Este campo se genera después del procesamiento inicial por el MIN. Ver Capítulo 6 para detalles.
 
-### 5.3.6. Campos Adicionales
+### 5.3.8. Campos Adicionales
 
 **`materia`:**
 - Tipo de materia del reclamo (Facturación, Corte de Suministro, etc.)
@@ -243,7 +366,9 @@ El MIN utiliza los niveles del inventario para:
 2. Consolidar entidades en `unified_context`
 3. Organizar documentos por nivel
 4. Detectar documentos faltantes
-5. Construir EDN final
+5. **Extraer y consolidar features** (nuevo - arquitectura fact-centric)
+6. **Construir evidence_map** (nuevo - trazabilidad de hechos)
+7. Construir EDN final
 
 **Salida:**
 - EDN completo y validado
@@ -274,11 +399,22 @@ def build_edn(case_id: str, processed_documents: List[Dict],
         processed_documents, case_metadata.get('tipo_caso')
     )
     
-    # 5. EDN final
+    # 5. Extraer features consolidados (fact-centric)
+    texto_normalizado = consolidate_text_from_documents(processed_documents)
+    consolidated_facts, evidence_map = construir_features(
+        expediente={'document_inventory': document_inventory},
+        texto_normalizado=texto_normalizado,
+        boletas=extract_boletas(processed_documents),
+        fotos=extract_fotos(processed_documents)
+    )
+    
+    # 6. EDN final
     edn = {
         'compilation_metadata': compilation_metadata,
         'unified_context': unified_context,
         'document_inventory': document_inventory,
+        'consolidated_facts': consolidated_facts,  # Nuevo
+        'evidence_map': evidence_map,  # Nuevo
         'materia': case_metadata.get('materia'),
         'monto_disputa': extract_max_amount(processed_documents),
         'empresa': case_metadata.get('empresa'),
@@ -317,7 +453,8 @@ El EDN debe cumplir con un esquema JSON estricto definido en `templates/expedien
 
 **Uso:**
 - Lee `compilation_metadata.tipo_caso` para cargar configuración
-- Evalúa `document_inventory` para verificar requisitos
+- **Consume `consolidated_facts`** para evaluar reglas (fact-centric)
+- **Usa `evidence_map`** para vincular evidencias con items del checklist
 - Genera `checklist` basado en reglas
 
 **Output:** EDN actualizado con `checklist` generado

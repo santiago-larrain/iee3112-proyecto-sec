@@ -18,7 +18,9 @@ backend/
 │   │   │   ├── pdf_extractor.py
 │   │   │   ├── docx_extractor.py
 │   │   │   ├── document_classifier.py
-│   │   │   └── entity_extractor.py
+│   │   │   ├── entity_extractor.py
+│   │   │   ├── fact_extractor.py        # Extracción de features (fact-centric)
+│   │   │   └── strategy_selector.py      # Selección de estrategia de fuentes
 │   │   ├── min/               # Motor de Inferencia Normativa
 │   │   │   ├── rule_engine.py
 │   │   │   └── rules/
@@ -72,6 +74,8 @@ Modelo completo del EDN que representa el contrato de datos estandarizado.
 - `compilation_metadata`: Metadatos del procesamiento (case_id, timestamp, status, tipo_caso)
 - `unified_context`: Contexto unificado (cliente, suministro, contacto)
 - `document_inventory`: Inventario de documentos por nivel (critical, supporting, missing)
+- `consolidated_facts`: Features consolidados (nuevo - fact-centric)
+- `evidence_map`: Mapa de evidencias vinculando features con fuentes (nuevo - fact-centric)
 - `checklist`: Checklist de validación estructurado en 3 grupos
 - `materia`, `monto_disputa`, `empresa`, `fecha_ingreso`, `alertas`
 
@@ -231,7 +235,8 @@ Orquestador principal del pipeline de procesamiento.
 3. Clasificación por tipo de documento
 4. Extracción de entidades específicas por tipo
 5. Consolidación en contexto unificado
-6. Generación de EDN
+6. **Extracción de features** (nuevo - fact-centric)
+7. Generación de EDN con `consolidated_facts` y `evidence_map`
 
 #### `pdf_extractor.py`
 Extracción de texto de PDFs con información de posición.
@@ -261,6 +266,29 @@ Extracción de entidades (RUT, NIS, direcciones, montos) usando regex.
 - Extracción específica por tipo de documento
 - Retorna `source` con `file_ref`, `page_index`, `coordinates`
 
+#### `fact_extractor.py`
+Extracción de features consolidados desde documentos (arquitectura fact-centric).
+
+**Funciones Principales:**
+- `extraer_desde_texto()`: Analiza texto y extrae features (período, origen, monto, etc.)
+- `construir_features()`: Orquesta extracción desde texto, boletas y fotos
+
+**Características:**
+- Usa patrones regex para buscar fechas, montos, palabras clave
+- Extrae snippets de texto con contexto para trazabilidad
+- Retorna `consolidated_facts` y `evidence_map`
+
+#### `strategy_selector.py`
+Selector de estrategia para extracción de features desde múltiples fuentes.
+
+**Función Principal:**
+- `extraer_desde_fuentes()`: Decide desde dónde obtener el gráfico de consumo usando heurísticas de fallback
+
+**Estrategia de Fallback:**
+1. Buscar gráfico en Informe Técnico
+2. Si no está, buscar en Fotos
+3. Si no está, activar módulo de boleta/webscraping
+
 ### 3.5. `src/engine/min/` - Motor de Inferencia Normativa
 
 #### `rule_engine.py`
@@ -278,6 +306,8 @@ Motor principal de reglas de validación.
    - Obtiene `rule_ref`
    - Busca función Python en `RULE_REGISTRY`
    - Ejecuta función pasando EDN
+   - **Consume `consolidated_facts`** en lugar de buscar en documentos (fact-centric)
+   - **Usa `evidence_map`** para vincular evidencias
    - Retorna estado + evidencia + datos con deep linking
 
 #### `rules/base_rules.py`
@@ -296,9 +326,11 @@ Reglas específicas para casos CNR.
 **Reglas:**
 - `RULE_CHECK_FINDING_CONSISTENCY`: C.1.1 - Consistencia del hallazgo
 - `RULE_CHECK_ACCURACY_PROOF`: C.1.2 - Prueba de exactitud
-- `RULE_CHECK_CIM_VALIDATION`: C.2.1 - Validación del CIM
-- `RULE_CHECK_RETROACTIVE_PERIOD`: C.2.2 - Periodo retroactivo
+- `RULE_CHECK_CIM_VALIDATION`: C.2.1 - Validación del CIM (consume `consolidated_facts`)
+- `RULE_CHECK_RETROACTIVE_PERIOD`: C.2.2 - Periodo retroactivo (consume `consolidated_facts`)
 - `RULE_CHECK_TARIFF_CORRECTION`: C.2.3 - Corrección monetaria
+
+**Nota:** Las reglas ahora consumen `consolidated_facts` en lugar de buscar en `document_inventory`, siguiendo la arquitectura fact-centric.
 
 #### `checklist_generator.py`
 Wrapper que delega la generación al Motor de Inferencia Normativa (MIN).

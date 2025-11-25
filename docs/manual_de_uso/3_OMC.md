@@ -28,7 +28,7 @@ Todo documento procesado queda indexado con metadatos de extracción. Cada entid
 
 ## 3.3. Pipeline de Procesamiento
 
-El OMC ejecuta un pipeline de 7 fases secuenciales:
+El OMC ejecuta un pipeline de 8 fases secuenciales:
 
 ```mermaid
 graph TD
@@ -36,9 +36,10 @@ graph TD
     B --> C[Fase 2: Extracción de Texto]
     C --> D[Fase 3: Clasificación Documental]
     D --> E[Fase 4: Extracción de Entidades]
-    E --> F[Fase 5: Consolidación]
-    F --> G[Fase 6: Generación de EDN]
-    G --> H[Fase 7: Persistencia]
+    E --> F[Fase 5: Consolidación de Entidades]
+    F --> G[Fase 6: Extracción de Features]
+    G --> H[Fase 7: Generación de EDN]
+    H --> I[Fase 8: Persistencia]
 ```
 
 ## 3.4. Fase 1: Sanitización y Normalización
@@ -262,7 +263,7 @@ Cada tipo de documento tiene un **esquema de extracción único** que define qu�
 ## 3.8. Fase 5: Consolidación de Entidades
 
 ### 3.8.1. Objetivo
-Consolidar entidades extraídas de múltiples documentos en un contexto unificado.
+Consolidar entidades extraídas de múltiples documentos en un contexto unificado (RUT, NIS, direcciones, etc.).
 
 ### 3.8.2. Proceso
 
@@ -284,19 +285,105 @@ Consolidar entidades extraídas de múltiples documentos en un contexto unificad
   - `commune`: Comuna
   - `email`, `phone`: Datos de contacto
 
-## 3.9. Fase 6: Generación del Expediente Digital Normalizado (EDN)
+## 3.9. Fase 6: Extracción de Features (Arquitectura Fact-Centric)
 
 ### 3.9.1. Objetivo
+Extraer y consolidar variables de negocio (features) desde todos los documentos, transformando la arquitectura de "centrada en documentos" a **"centrada en hechos" (Fact-Centric)**.
+
+### 3.9.2. Módulos de Extracción
+
+#### `fact_extractor.py`
+
+**Funciones Principales:**
+
+1. **`extraer_desde_texto()`**: Analiza el texto normalizado e identifica:
+   - Período del CNR (meses)
+   - Fechas de inicio y término
+   - Origen de la irregularidad (bypass, medidor defectuoso, etc.)
+   - Historial de 12 meses disponible
+   - Gráfico de consumo
+   - Fotos de irregularidad
+   - Monto CNR
+   - Notificación previa
+   - Constancia notarial
+   - Certificado de laboratorio
+
+2. **`construir_features()`**: Orquesta la extracción desde múltiples fuentes:
+   - Une información desde texto, boletas y fotos
+   - Prioriza fuentes según confiabilidad
+   - Retorna `features` consolidados y `mapa_evidencias`
+
+**Estrategia de Extracción:**
+- Usa patrones regex para buscar fechas, montos, palabras clave
+- Extrae snippets de texto con contexto para trazabilidad
+- Vincula cada feature con su fuente exacta (documento, página, coordenadas)
+
+#### `strategy_selector.py`
+
+**Función Principal:**
+
+**`extraer_desde_fuentes()`**: Decide desde dónde obtener el gráfico de consumo y otros datos usando heurísticas de fallback:
+
+1. **Estrategia 1**: Buscar gráfico en Informe Técnico
+2. **Estrategia 2**: Si no está en informe, buscar en Fotos
+3. **Estrategia 3**: Si no está en fotos, activar módulo de boleta/webscraping
+
+**Ejemplo de Heurística:**
+```
+Si el sistema detecta que el gráfico ya viene en el informe o en las fotos del expediente,
+no usa la boleta. Si no se encuentra el gráfico, entonces activa el módulo de boleta/webscraping
+para extraerlo desde allí.
+```
+
+### 3.9.3. Salida de la Fase 6
+
+**`consolidated_facts` (alias: `features`):**
+Objeto plano con variables de negocio ya destiladas:
+```json
+{
+  "periodo_meses": 6,
+  "origen": "conexion_irregular",
+  "tiene_grafico_consumo": true,
+  "monto_cnr": 86500,
+  ...
+}
+```
+
+**`evidence_map` (alias: `evidencias`):**
+Mapa que vincula cada feature con su fuente:
+```json
+{
+  "periodo_meses": [
+    {
+      "tipo": "texto",
+      "documento": "Informe_Tecnico.pdf",
+      "pagina": 2,
+      "snippet": "el periodo comprendido entre 10-09-2023 y 15-05-2024"
+    }
+  ],
+  ...
+}
+```
+
+### 3.9.4. Integración con Pipeline
+
+La Fase 6 se ejecuta después de la consolidación de entidades y antes de la generación del EDN. Esto permite que el EDN incluya tanto el inventario documental tradicional como los features consolidados, facilitando que el MIN opere de manera eficiente.
+
+## 3.10. Fase 7: Generación del Expediente Digital Normalizado (EDN)
+
+### 3.10.1. Objetivo
 Construir el EDN completo que servirá como contrato de datos para los módulos posteriores.
 
-### 3.9.2. Estructura del EDN
+### 3.10.2. Estructura del EDN
 
 **Componentes:**
 1. **`compilation_metadata`**: Metadatos del procesamiento
 2. **`unified_context`**: Contexto consolidado
 3. **`document_inventory`**: Inventario de documentos por nivel
-4. **`materia`**, `monto_disputa`, `empresa`, `fecha_ingreso`: Metadatos del caso
-5. **`alertas`**: Alertas y advertencias
+4. **`consolidated_facts`**: Features consolidados (nuevo - fact-centric)
+5. **`evidence_map`**: Mapa de evidencias (nuevo - fact-centric)
+6. **`materia`**, `monto_disputa`, `empresa`, `fecha_ingreso`: Metadatos del caso
+7. **`alertas`**: Alertas y advertencias
 
 ### 3.9.3. Organización de Documentos por Nivel
 
@@ -323,9 +410,9 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - Lista de documentos faltantes en `level_0_missing`
 - Nivel de alerta (HIGH, MEDIUM, LOW)
 
-## 3.10. Fase 7: Persistencia en Base de Datos
+## 3.11. Fase 8: Persistencia en Base de Datos
 
-### 3.10.1. Proceso de Upsert
+### 3.11.1. Proceso de Upsert
 
 **Entrada:**
 - EDN completo con entidades consolidadas
@@ -355,9 +442,9 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - Base de datos actualizada con historial preservado
 - Relaciones entre entidades establecidas
 
-## 3.11. Manejo de Errores y Casos Edge
+## 3.12. Manejo de Errores y Casos Edge
 
-### 3.11.1. Estrategia de Tolerancia a Fallos
+### 3.12.1. Estrategia de Tolerancia a Fallos
 
 **Principio:** Un documento fallido no debe detener el procesamiento del caso completo.
 
@@ -367,7 +454,7 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - Continuación con siguiente archivo
 - Estado final: `COMPLETED` o `COMPLETED_WITH_WARNINGS`
 
-### 3.11.2. Validación de Integridad Post-Procesamiento
+### 3.12.2. Validación de Integridad Post-Procesamiento
 
 **Validaciones:**
 1. **RUT válido**: Verificar dígito verificador
@@ -376,7 +463,7 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 4. **Montos razonables**: Entre 1.000 y 10.000.000 CLP
 5. **Documentos críticos**: Al menos uno de `CARTA_RESPUESTA` o `TABLA_CALCULO`
 
-## 3.12. Librerías y Tecnologías
+## 3.13. Librerías y Tecnologías
 
 | Componente | Librería | Versión Mínima | Propósito |
 |------------|----------|----------------|-----------|
@@ -394,7 +481,7 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - **ghostscript**: Conversión a PDF/A
 - **tesseract-ocr**: Motor OCR (requiere instalación del sistema)
 
-## 3.13. Conclusión
+## 3.14. Conclusión
 
 El OMC es el corazón del sistema de ingesta. Su diseño permite transformar documentos no estructurados en datos analizables, construir una base de datos histórica que preserva la relación entre actores y eventos, y generar un contrato de datos estandarizado (EDN) que alimenta todos los módulos posteriores. La clave del éxito está en reconocer que cada tipo de documento tiene información única y diseñar el sistema para extraer y almacenar esa información de manera estructurada y consultable.
 
