@@ -1,4 +1,0 @@
-"""
-Scrapers específicos por distribuidora
-"""
-

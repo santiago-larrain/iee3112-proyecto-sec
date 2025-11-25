@@ -1,4 +1,0 @@
-"""
-Utilidades para el backend
-"""
-
