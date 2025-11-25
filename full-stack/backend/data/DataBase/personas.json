@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "rut": "10.154.014-6",
+    "nombre": "Cliente 230125-000509",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 2,
+    "rut": "RUT-231220-000557",
+    "nombre": "Cliente 231220-000557",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 3,
+    "rut": "14.497.596-9",
+    "nombre": "Cliente 240108-000010",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 4,
+    "rut": "RUT-240110-000679",
+    "nombre": "Cliente 240110-000679",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 5,
+    "rut": "RUT-240125-000595",
+    "nombre": "Cliente 240125-000595",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 6,
+    "rut": "RUT-240126-000132",
+    "nombre": "Cliente 240126-000132",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 7,
+    "rut": "RUT-240205-000393",
+    "nombre": "Cliente 240205-000393",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 8,
+    "rut": "RUT-240320-000178",
+    "nombre": "Cliente 240320-000178",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 9,
+    "rut": "RUT-240322-000010",
+    "nombre": "Cliente 240322-000010",
+    "email": null,
+    "telefono": null
+  },
+  {
+    "id": 10,
+    "rut": "RUT-240327-000180",
+    "nombre": "Cliente 240327-000180",
+    "email": null,
+    "telefono": null
+  }
+]

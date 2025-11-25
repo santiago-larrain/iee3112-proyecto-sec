@@ -1,0 +1,72 @@
+[
+  {
+    "id": 1,
+    "nis": "2642280",
+    "comuna": "Desconocida",
+    "direccion": null,
+    "numero_cliente": "2642280"
+  },
+  {
+    "id": 2,
+    "nis": "1982860",
+    "comuna": "Santiago",
+    "direccion": "calle del reclamo que es: NUEVA SAN MARTIN de la comuna Maipú",
+    "numero_cliente": "1982860"
+  },
+  {
+    "id": 3,
+    "nis": "197803311",
+    "comuna": "Santiago",
+    "direccion": "Pasaje Kolla S/N 13 1833 de corroborar el consumo energético eléctrico del cliente en estudio.",
+    "numero_cliente": "197803311"
+  },
+  {
+    "id": 4,
+    "nis": "240110",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O`Higgins Nº1465",
+    "numero_cliente": "240110"
+  },
+  {
+    "id": 5,
+    "nis": "240125",
+    "comuna": "Ñuñoa",
+    "direccion": "calle del reclamo que es: AV SIMÓN BOLIVAR  de la comuna Ñuñoa",
+    "numero_cliente": "240125"
+  },
+  {
+    "id": 6,
+    "nis": "6643",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O`Higgins Nº1465",
+    "numero_cliente": "6643"
+  },
+  {
+    "id": 7,
+    "nis": "240205",
+    "comuna": "Puente Alto",
+    "direccion": "calle del reclamo que es: LOS INGLESES ORIENTE de la comuna Puente Alto",
+    "numero_cliente": "240205"
+  },
+  {
+    "id": 8,
+    "nis": "240320",
+    "comuna": "Desconocida",
+    "direccion": "calle del reclamo que es: GENERAL KORNER 550 de la comuna Villarrica",
+    "numero_cliente": "240320"
+  },
+  {
+    "id": 9,
+    "nis": "2028414",
+    "comuna": "Santiago",
+    "direccion": "Av. Elías Fernández Albano",
+    "numero_cliente": "2028414"
+  },
+  {
+    "id": 10,
+    "nis": "2030739",
+    "comuna": "Desconocida",
+    "direccion": null,
+    "numero_cliente": "2030739"
+  }
+]
