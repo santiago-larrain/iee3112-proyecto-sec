@@ -25,11 +25,19 @@ backend/
 │   │   │   ├── entity_extractor.py
 │   │   │   ├── fact_extractor.py        # Extracción de features (fact-centric)
 │   │   │   ├── strategy_selector.py      # Selección de estrategia de fuentes
+│   │   │   ├── timeline_builder.py       # Construcción de timeline temporal
 │   │   │   ├── create_json_database.py  # Script para poblar BD desde casos
+│   │   │   ├── scrapers/                 # Módulo de scraping PIP
+│   │   │   │   ├── __init__.py
+│   │   │   │   ├── base_scraper.py       # Interfaz abstracta para scrapers
+│   │   │   │   ├── pip_manager.py        # Orquestador de scrapers
+│   │   │   │   ├── pip_enel_scraper.py   # Scraper específico ENEL
+│   │   │   │   └── pip_cge_scraper.py    # Scraper específico CGE
 │   │   │   └── README.md                # Documentación del OMC
 │   │   ├── min/               # Motor de Inferencia Normativa
 │   │   │   ├── rule_engine.py
 │   │   │   ├── checklist_generator.py   # Generador de checklist
+│   │   │   ├── calculator.py              # Calculadora CNR (auditoría matemática)
 │   │   │   └── rules/
 │   │   │       ├── __init__.py
 │   │   │       ├── base_rules.py
@@ -269,8 +277,11 @@ Orquestador principal del pipeline de procesamiento.
 3. Clasificación por tipo de documento
 4. Extracción de entidades específicas por tipo
 5. Consolidación en contexto unificado
-6. **Extracción de features** (nuevo - fact-centric)
-7. Generación de EDN con `consolidated_facts` y `evidence_map`
+6. **Extracción de features** (fact-centric)
+7. Generación de EDN base con `consolidated_facts` y `evidence_map`
+8. **Enriquecimiento externo** (scraping PIP) - re-inyección de documentos
+9. **Construcción de timeline** temporal
+10. Persistencia en base de datos
 
 #### `pdf_extractor.py`
 Extracción de texto de PDFs con información de posición.
@@ -331,6 +342,36 @@ Selector de estrategia para extracción de features desde múltiples fuentes.
 2. Si no está, buscar en Fotos
 3. Si no está, activar módulo de boleta/webscraping
 
+#### `timeline_builder.py`
+Constructor de timeline temporal del caso.
+
+**Función Principal:**
+- `build_timeline(edn) -> Dict`: Extrae fechas clave y construye línea temporal
+- Calcula deltas entre eventos críticos (reclamo → respuesta, inspección → cobro)
+- Detecta silencios administrativos (>30 días) y períodos retroactivos ilegales (>12 meses)
+- Genera warnings temporales
+
+**Salida:** `edn.temporal_analysis` con eventos ordenados, deltas y warnings
+
+#### `scrapers/` - Módulo de Scraping PIP
+
+**Patrón Strategy:**
+- `base_scraper.py`: Interfaz abstracta que define contrato para todos los scrapers
+  - Métodos: `validate_credentials()`, `get_available_periods()`, `download_boleta()`
+- `pip_manager.py`: Orquestador que coordina múltiples scrapers según empresa
+  - Método: `enrich_case(company, nis, output_dir)` - Descarga boletas y retorna paths
+- Implementaciones específicas: `pip_enel_scraper.py`, `pip_cge_scraper.py`
+
+**Flujo de Integración:**
+1. `PIPManager` detecta empresa y NIS del caso desde `unified_context`
+2. Busca scraper correspondiente
+3. Valida credenciales (si falla, continúa sin scraping)
+4. Descarga boletas oficiales (últimos 12 meses por defecto)
+5. **Re-inyecta PDFs descargados** en `process_file()` para procesamiento completo
+6. Marca documentos con `provenance: 'SYSTEM_RETRIEVAL'`
+
+**Manejo de Errores:** Falla silenciosamente (warnings, no excepciones) para no interrumpir pipeline
+
 ### 3.5. `src/engine/min/` - Motor de Inferencia Normativa
 
 #### `rule_engine.py`
@@ -346,6 +387,8 @@ Motor principal de reglas de validación.
 2. Carga JSON correspondiente (`templates/checklist/{tipo_caso}.json`)
 3. Para cada item en JSON:
    - Obtiene `rule_ref`
+   - Evalúa regla pasando `edn.consolidated_facts` (fact-centric)
+   - Construye evidencias usando `construir_evidencias_para_regla()` con `evidence_map`
    - Busca función Python en `RULE_REGISTRY`
    - Ejecuta función pasando EDN
    - **Consume `consolidated_facts`** en lugar de buscar en documentos (fact-centric)
@@ -533,6 +576,9 @@ Ver `requirements.txt` para lista completa. Dependencias principales:
 - `reportlab`: Generación de PDFs (para resoluciones)
 - `sqlalchemy`: ORM para SQLite (opcional)
 - `python-multipart`: Soporte para uploads
+- `playwright` o `selenium`: Web scraping para portales PIP (nuevo)
+- `beautifulsoup4`: Parsing HTML para scraping (nuevo)
+- `requests`: HTTP requests para descarga de archivos (nuevo)
 
 ## 6. Configuración y Ejecución
 

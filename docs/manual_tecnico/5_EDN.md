@@ -129,6 +129,7 @@ Documentos esenciales para el análisis del caso.
   "original_name": "Respuesta_Reclamo_2642280.pdf",
   "standardized_name": "CARTA_RESPUESTA - Respuesta Reclamo 2642280",
   "file_path": "documents/231220-000557/Respuesta_Reclamo_2642280.pdf",
+  "provenance": "USER_UPLOAD",
   "extracted_data": {
     "response_date": "2023-12-21",
     "decision": "IMPROCEDENTE",
@@ -141,6 +142,13 @@ Documentos esenciales para el análisis del caso.
   }
 }
 ```
+
+**Campo `provenance`:**
+- `USER_UPLOAD`: Documento subido por el usuario
+- `SYSTEM_RETRIEVAL`: Documento descargado por el sistema (scraping desde portal PIP)
+- `None`: Origen no especificado (compatibilidad hacia atrás)
+
+**Importancia:** El MIN puede usar `provenance` para determinar jerarquía probatoria. Los documentos oficiales (`SYSTEM_RETRIEVAL`) tienen mayor peso que los subidos por el usuario.
 
 #### Level 2 - Soportantes
 
@@ -294,7 +302,70 @@ El **snippet** es un fragmento de texto extraído exacto que muestra el contexto
 **Uso en Checklist:**
 El MIN usa `construir_evidencias_para_regla()` para vincular cada item del checklist con las evidencias relevantes del `evidence_map`, permitiendo que cada validación tenga acceso directo a su fuente.
 
-### 5.3.7. `checklist`
+### 5.3.7. `temporal_analysis`
+
+**Propósito:** Análisis temporal del caso con eventos ordenados, deltas críticos y warnings de anomalías temporales.
+
+**Estructura:**
+```json
+{
+  "events": [
+    {
+      "date": "2023-05-10",
+      "event": "Ingreso del Reclamo",
+      "source_doc": null,
+      "type": "reclamo"
+    },
+    {
+      "date": "2023-06-25",
+      "event": "Respuesta de la Empresa",
+      "source_doc": "uuid-123",
+      "type": "respuesta",
+      "delta_days": 45
+    },
+    {
+      "date": "2023-07-15",
+      "event": "Inspección Técnica",
+      "source_doc": "uuid-456",
+      "type": "inspeccion"
+    },
+    {
+      "date": "2023-08-01",
+      "event": "Inicio Período de Cobro",
+      "source_doc": "uuid-789",
+      "type": "periodo_inicio"
+    }
+  ],
+  "critical_deltas": {
+    "reclamo_to_respuesta": 45,
+    "inspeccion_to_cobro": 17,
+    "periodo_cobro_meses": 6.5
+  },
+  "warnings": [
+    "Silencio administrativo detectado: 45 días entre reclamo y respuesta (límite: 30 días)"
+  ],
+  "incomplete": false
+}
+```
+
+**Campos:**
+- `events`: Lista ordenada cronológicamente de eventos clave del caso
+  - `date`: Fecha en formato ISO
+  - `event`: Descripción del evento
+  - `source_doc`: `file_id` del documento fuente (si aplica)
+  - `type`: Tipo de evento (`reclamo`, `respuesta`, `inspeccion`, `periodo_inicio`, `periodo_fin`)
+  - `delta_days`: Días transcurridos desde el evento anterior (opcional)
+- `critical_deltas`: Deltas entre eventos críticos en días o meses
+- `warnings`: Lista de warnings temporales detectados (silencios administrativos, períodos ilegales)
+- `incomplete`: `true` si faltan fechas importantes para el análisis
+
+**Uso en Frontend:**
+- Visualización de timeline horizontal con eventos
+- Segmentos rojos para deltas > 30 días (regla de UI)
+- Deep linking a documentos fuente desde eventos
+- Alertas visuales para warnings temporales
+
+### 5.3.8. `checklist`
 
 **Propósito:** Checklist de validación generado por el MIN.
 
@@ -309,7 +380,7 @@ El MIN usa `construir_evidencias_para_regla()` para vincular cada item del check
 
 **Nota:** Este campo se genera después del procesamiento inicial por el MIN. Ver Capítulo 6 para detalles.
 
-### 5.3.8. Campos Adicionales
+### 5.3.9. Campos Adicionales
 
 **`materia`:**
 - Tipo de materia del reclamo (Facturación, Corte de Suministro, etc.)

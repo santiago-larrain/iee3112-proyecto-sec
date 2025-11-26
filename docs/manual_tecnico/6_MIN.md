@@ -413,13 +413,136 @@ evidence_data = {
 - Resaltar área relevante (futuro)
 - Navegación directa a evidencia
 
-## 6.9. Manejo de Múltiples Tipos de Reclamos
+## 6.9. Auditoría Matemática (Simulador CNR)
 
-### 6.9.1. Identificación Automática
+### 6.9.1. Objetivo
+
+Permitir al funcionario recalcular la deuda CNR si considera que la empresa usó un promedio (CIM) incorrecto o un período inadecuado. El sistema proporciona un simulador matemático que implementa la fórmula normativa de recuperación.
+
+### 6.9.2. Clase CNRSolver
+
+**Ubicación:** `src/engine/min/calculator.py`
+
+**Método Principal:**
+```python
+def calculate_cnr(
+    historial_kwh: List[float],
+    tarifa_vigente: float,
+    meses_a_recuperar: int,
+    cim_override: Optional[float] = None,
+    monto_cobrado: Optional[float] = None
+) -> Dict[str, Any]
+```
+
+**Fórmula Normativa:**
+```
+CNR = CIM × Tarifa × Meses
+
+Donde:
+- CIM = Promedio de últimos 12 meses de consumo (o CIM personalizado)
+- Tarifa = Tarifa vigente en $/kWh
+- Meses = Período a recuperar (máximo 12 meses normativo)
+```
+
+**Retorno:**
+```json
+{
+  "monto_calculado": 86500.0,
+  "diferencia_vs_cobrado": 5000.0,
+  "detalle_calculo": {
+    "formula": "CNR = CIM × Tarifa × Meses",
+    "cim_calculo": "Promedio de últimos 12 meses",
+    "historial_usado": 12,
+    "meses_aplicados": 6,
+    "tarifa_aplicada": 150.5
+  },
+  "breakdown_por_mes": [
+    {
+      "mes": 1,
+      "consumo_kwh": 623.0,
+      "tarifa": 150.5,
+      "monto": 93761.5
+    },
+    ...
+  ],
+  "cim_aplicado": 623.0
+}
+```
+
+### 6.9.3. Endpoint de Cálculo What-if
+
+**Ruta:** `POST /api/casos/{case_id}/calculate-cnr`
+
+**Características:**
+- **No guarda en BD**: Es un cálculo What-if que no modifica el caso
+- **Permite modificar CIM**: El funcionario puede probar diferentes valores de CIM
+- **Permite modificar meses**: Puede simular diferentes períodos de recuperación
+- **Comparación automática**: Si se proporciona `monto_cobrado`, calcula la diferencia
+
+**Request:**
+```json
+{
+  "historial_kwh": [600, 620, 610, 630, 625, 615, 635, 640, 620, 630, 625, 635],
+  "tarifa_vigente": 150.5,
+  "meses_a_recuperar": 6,
+  "cim_override": 623.0
+}
+```
+
+**Response:**
+```json
+{
+  "monto_calculado": 562389.0,
+  "diferencia_vs_cobrado": 5000.0,
+  "detalle_calculo": {...},
+  "breakdown_por_mes": [...],
+  "cim_aplicado": 623.0
+}
+```
+
+### 6.9.4. Integración con Reglas de Validación
+
+El simulador complementa las reglas de validación del MIN:
+
+- **Regla C.2.1 (Validación del CIM)**: Puede usar el simulador para verificar si el CIM aplicado es razonable
+- **Regla C.2.2 (Periodo Retroactivo)**: Puede usar el simulador para verificar el impacto de diferentes períodos
+- **Regla C.2.3 (Corrección Monetaria)**: Puede usar el simulador para verificar si la tarifa aplicada es correcta
+
+**Flujo de Uso:**
+1. Funcionario revisa item de validación de montos en checklist
+2. Hace click en "🧮 Abrir Simulador"
+3. Modifica CIM o meses según su criterio
+4. Ve cálculo en tiempo real y comparación con monto cobrado
+5. Toma decisión informada sobre la validez del cobro
+
+### 6.9.5. Método de Comparación
+
+**Método:** `compare_with_company_calculation()`
+
+Compara el cálculo del sistema con el de la empresa, identificando diferencias significativas (>5%):
+
+```python
+resultado = cnr_solver.compare_with_company_calculation(
+    monto_cobrado=87000,
+    historial_kwh=[600, 620, ...],
+    tarifa_vigente=150.5,
+    meses_a_recuperar=6,
+    cim_empresa=650  # Si se conoce
+)
+```
+
+**Retorno incluye:**
+- Diferencia absoluta y porcentual
+- Flag `diferencia_significativa` si > 5%
+- Recomendación automática ("Revisar cálculo de la empresa" o "Cálculo consistente")
+
+## 6.10. Manejo de Múltiples Tipos de Reclamos
+
+### 6.10.1. Identificación Automática
 
 El OMC determina `tipo_caso` durante el procesamiento y lo guarda en `EDN.compilation_metadata.tipo_caso`.
 
-### 6.9.2. Carga Dinámica de Configuración
+### 6.10.2. Carga Dinámica de Configuración
 
 El MIN usa el `tipo_caso` para cargar el JSON correcto:
 
@@ -434,7 +557,7 @@ def load_checklist_config(self, tipo_caso: str):
         config_file = self.checklist_dir / "template.json"
 ```
 
-### 6.9.3. Agregar Nuevo Tipo de Reclamo
+### 6.10.3. Agregar Nuevo Tipo de Reclamo
 
 **Pasos:**
 1. Crear JSON de configuración en `templates/checklist/{nuevo_tipo}.json`
@@ -447,9 +570,9 @@ def load_checklist_config(self, tipo_caso: str):
 - El flujo de procesamiento no cambia
 - La interfaz de usuario se adapta automáticamente
 
-## 6.10. Ventajas del Enfoque Fact-Centric
+## 6.11. Ventajas del Enfoque Fact-Centric
 
-### 6.10.1. Eficiencia
+### 6.11.1. Eficiencia
 
 **Antes (Document-Centric):**
 - Las reglas debían buscar información en múltiples documentos
@@ -461,21 +584,21 @@ def load_checklist_config(self, tipo_caso: str):
 - Procesamiento único de documentos en el OMC
 - Lógica simple: `if features.periodo_meses > 12: return FAIL`
 
-### 6.10.2. Trazabilidad
+### 6.11.2. Trazabilidad
 
 - Cada feature tiene su fuente exacta en `evidence_map`
 - Snippets permiten verificar rápidamente la evidencia
 - Deep linking directo a documentos y páginas específicas
 
-### 6.10.3. Mantenibilidad
+### 6.11.3. Mantenibilidad
 
 - Separación clara: OMC extrae, MIN evalúa
 - Reglas más simples y fáciles de entender
 - Agregar nuevos features solo requiere actualizar OMC
 
-## 6.11. Ventajas del Enfoque Modular
+## 6.12. Ventajas del Enfoque Modular
 
-### 6.11.1. Para el Funcionario
+### 6.12.1. Para el Funcionario
 
 - **Rapidez**: Checklist generado automáticamente en milisegundos
 - **Completitud**: No se olvida ninguna validación
@@ -483,7 +606,7 @@ def load_checklist_config(self, tipo_caso: str):
 - **Acceso Directo**: Links a evidencia sin buscar manualmente
 - **Proceso Uniforme**: Mismo flujo para todos los tipos de reclamos
 
-### 6.11.2. Para el Desarrollo
+### 6.12.2. Para el Desarrollo
 
 - **Mantenibilidad**: Cambiar reglas no requiere tocar JSONs
 - **Testabilidad**: Reglas Python independientes y testeables
@@ -491,14 +614,14 @@ def load_checklist_config(self, tipo_caso: str):
 - **Separación de Responsabilidades**: Estructura (JSON) vs Lógica (Python)
 - **Reutilización**: Reglas base compartidas entre tipos
 
-### 6.11.3. Para la Organización
+### 6.12.3. Para la Organización
 
 - **Escalabilidad**: Fácil agregar nuevos tipos de reclamos
 - **Documentación**: JSONs sirven como documentación viva
 - **Auditoría**: Todas las validaciones están registradas
 - **Evolución**: Reglas pueden mejorarse sin cambiar estructura
 
-## 6.12. Conclusión
+## 6.13. Conclusión
 
 El MIN es el cerebro del sistema de validación, permitiendo que el funcionario se enfoque en la revisión en lugar de recordar reglas. La arquitectura modular (JSONs + Reglas Python) permite agregar nuevos tipos de reclamos sin cambiar código existente, mejorar reglas sin tocar estructura visual, y mantener separación clara entre configuración y lógica. El concepto de binding conecta elegantemente la estructura visual con la lógica de evaluación, garantizando flexibilidad y mantenibilidad.
 

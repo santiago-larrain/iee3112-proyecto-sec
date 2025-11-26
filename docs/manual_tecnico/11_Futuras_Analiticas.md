@@ -262,7 +262,123 @@ La separación de datos en archivos especializados:
 - Similitud de contexto: Comparar unified_context
 - Machine Learning: Entrenar modelos para detectar similitudes
 
-## 11.13. Conclusión
+## 11.13. Auditoría Espejo
+
+### 11.13.1. Concepto
+
+La **Auditoría Espejo** es una capacidad avanzada que permite al sistema descargar masivamente boletas oficiales desde portales PIP (Plataforma de Información Pública) para crear una base de datos paralela de fiscalización. Esto transforma el sistema de un revisor pasivo (que solo revisa lo que la empresa envía) a un auditor activo (que contrasta con datos oficiales).
+
+### 11.13.2. Descarga Masiva de Boletas
+
+**Proceso:**
+1. El sistema identifica todos los casos con `service_nis` y `empresa` válidos
+2. Para cada caso, invoca el scraper correspondiente (`ENELScraper`, `CGEScraper`, etc.)
+3. Descarga boletas de los últimos 12-24 meses desde el portal PIP oficial
+4. Almacena las boletas en una base de datos paralela (`audit_database`)
+
+**Estructura de Base de Datos Paralela:**
+```sql
+CREATE TABLE boletas_oficiales (
+    id SERIAL PRIMARY KEY,
+    nis VARCHAR(50) NOT NULL,
+    empresa VARCHAR(100) NOT NULL,
+    periodo VARCHAR(7) NOT NULL,  -- "YYYY-MM"
+    fecha_descarga TIMESTAMP DEFAULT NOW(),
+    file_path TEXT NOT NULL,
+    extracted_data JSONB,
+    UNIQUE(nis, empresa, periodo)
+);
+```
+
+### 11.13.3. Detección de Inconsistencias Masivas
+
+**Capacidades:**
+- **Comparación Automática**: El sistema compara los montos cobrados en boletas oficiales con los montos reportados en los casos
+- **Detección de Discrepancias**: Identifica casos donde la empresa cobró un monto diferente al que aparece en la boleta oficial
+- **Análisis Comparativo**: Genera reportes de diferencias empresa vs. oficial
+
+**Ejemplo de Análisis:**
+```python
+# Para cada caso CNR
+monto_caso = caso.monto_disputa
+boleta_oficial = get_boleta_oficial(caso.service_nis, caso.empresa, caso.periodo)
+monto_oficial = boleta_oficial.monto_cnr
+
+if abs(monto_caso - monto_oficial) > threshold:
+    flag_inconsistencia(caso.id, monto_caso, monto_oficial)
+```
+
+### 11.13.4. Análisis Comparativo Empresa vs. Oficial
+
+**Métricas Generadas:**
+- **Tasa de Inconsistencias**: Porcentaje de casos donde hay diferencias significativas
+- **Magnitud de Discrepancias**: Promedio y desviación estándar de las diferencias
+- **Patrones por Empresa**: Identificar empresas con mayor tasa de inconsistencias
+- **Patrones Temporales**: Detectar períodos donde hay más inconsistencias
+
+**Reporte Automático:**
+```json
+{
+  "periodo": "2024-01",
+  "empresa": "ENEL",
+  "total_casos": 150,
+  "casos_con_inconsistencias": 23,
+  "tasa_inconsistencias": 15.3,
+  "diferencia_promedio": 8500.0,
+  "diferencia_maxima": 45000.0,
+  "casos_críticos": [
+    {
+      "case_id": "240101-000123",
+      "monto_empresa": 120000,
+      "monto_oficial": 75000,
+      "diferencia": 45000,
+      "diferencia_porcentual": 60.0
+    }
+  ]
+}
+```
+
+### 11.13.5. Beneficios de la Auditoría Espejo
+
+**Para la SEC:**
+- **Fiscalización Proactiva**: No espera a que el cliente reclame, detecta inconsistencias automáticamente
+- **Detección Temprana**: Identifica problemas antes de que se conviertan en reclamos formales
+- **Evidencia Sólida**: Tiene acceso a datos oficiales para contrastar con lo reportado por la empresa
+- **Escalabilidad**: Puede auditar miles de casos simultáneamente
+
+**Para el Cliente:**
+- **Protección Automática**: El sistema detecta inconsistencias sin que el cliente tenga que reclamar
+- **Resolución Rápida**: Casos con evidencia clara se resuelven más rápido
+- **Transparencia**: Acceso a datos oficiales para validar cobros
+
+**Para las Empresas:**
+- **Incentivo a la Precisión**: Saber que serán auditadas automáticamente incentiva a reportar datos correctos
+- **Detección de Errores Propios**: Puede identificar errores en sus propios sistemas
+
+### 11.13.6. Implementación Técnica
+
+**Componentes:**
+- **Scraper Scheduler**: Programa que ejecuta descargas masivas periódicamente (diario, semanal)
+- **Audit Database**: Base de datos separada para almacenar boletas oficiales
+- **Comparison Engine**: Motor que compara datos de casos con boletas oficiales
+- **Alert System**: Sistema de alertas para inconsistencias críticas
+
+**Flujo:**
+1. Scheduler ejecuta descarga masiva (noche, baja carga)
+2. Scrapers descargan boletas para todos los NIS activos
+3. Boletas se procesan y almacenan en `audit_database`
+4. Comparison Engine compara con casos existentes
+5. Alertas se generan para inconsistencias significativas
+6. Reportes se generan automáticamente
+
+### 11.13.7. Consideraciones de Privacidad y Seguridad
+
+- **Datos Sensibles**: Las boletas contienen información personal, deben protegerse
+- **Acceso Restringido**: Solo funcionarios autorizados pueden acceder a la base de datos de auditoría
+- **Retención**: Políticas claras de retención de datos descargados
+- **Compliance**: Cumplir con regulaciones de protección de datos
+
+## 11.14. Conclusión
 
 La estructura de base de datos relacional implementada en el sistema habilita un amplio rango de análisis que pueden mejorar la eficiencia del funcionario, acelerar la resolución de casos, detectar problemas antes de que se agraven, proporcionar insights para decisiones estratégicas, mejorar la consistencia en las resoluciones y reducir errores mediante el aprendizaje de casos pasados. Estos análisis transforman el sistema de un simple gestor de casos en una herramienta de inteligencia de negocio que ayuda al funcionario a tomar decisiones más informadas y eficientes.
 

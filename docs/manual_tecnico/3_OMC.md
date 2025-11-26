@@ -28,7 +28,7 @@ Todo documento procesado queda indexado con metadatos de extracción. Cada entid
 
 ## 3.3. Pipeline de Procesamiento
 
-El OMC ejecuta un pipeline de 8 fases secuenciales:
+El OMC ejecuta un pipeline de 10 fases secuenciales:
 
 ```mermaid
 graph TD
@@ -38,8 +38,10 @@ graph TD
     D --> E[Fase 4: Extracción de Entidades]
     E --> F[Fase 5: Consolidación de Entidades]
     F --> G[Fase 6: Extracción de Features]
-    G --> H[Fase 7: Generación de EDN]
-    H --> I[Fase 8: Persistencia]
+    G --> H[Fase 7: Generación de EDN Base]
+    H --> I[Fase 8: Enriquecimiento Externo]
+    I --> J[Fase 9: Construcción de Timeline]
+    J --> K[Fase 10: Persistencia]
 ```
 
 ## 3.4. Fase 1: Sanitización y Normalización
@@ -410,9 +412,157 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - Lista de documentos faltantes en `level_0_missing`
 - Nivel de alerta (HIGH, MEDIUM, LOW)
 
-## 3.11. Fase 8: Persistencia en Base de Datos
+## 3.11. Fase 8: Enriquecimiento Externo (Scraping PIP)
 
-### 3.11.1. Proceso de Upsert
+### 3.11.1. Objetivo
+Descargar boletas oficiales desde portales PIP (Plataforma de Información Pública) para contrastar con los documentos subidos por el usuario, transformando el sistema de revisor pasivo a auditor activo.
+
+### 3.11.2. Patrón Strategy
+
+**Arquitectura:**
+- `base_scraper.py`: Interfaz abstracta que define el contrato para todos los scrapers
+- `pip_manager.py`: Orquestador que coordina múltiples scrapers según la empresa
+- Implementaciones específicas: `pip_enel_scraper.py`, `pip_cge_scraper.py`, etc.
+
+**Métodos de BaseScraper:**
+- `validate_credentials()`: Valida credenciales para acceder al portal
+- `get_available_periods(nis)`: Obtiene períodos disponibles para un NIS
+- `download_boleta(nis, period, output_path)`: Descarga una boleta específica
+
+### 3.11.3. Lógica de Ejecución
+
+**Trigger:**
+- Si `unified_context.service_nis` y `empresa` están presentes → Invoca `PIPManager`
+
+**Proceso:**
+1. `PIPManager` busca scraper para la empresa detectada
+2. Valida credenciales (si falla, continúa sin scraping)
+3. Obtiene períodos disponibles (últimos 12 meses por defecto)
+4. Descarga boletas en directorio temporal
+5. **Re-inyección**: Cada PDF descargado se re-inyecta en `process_file()` para pasar por:
+   - OCR y extracción de texto
+   - Clasificación documental
+   - Extracción de entidades
+   - Clasificación por nivel
+
+**Marcado de Provenance:**
+- Documentos descargados se marcan con `provenance: 'SYSTEM_RETRIEVAL'`
+- Esto permite que el MIN sepa qué documento tiene mayor jerarquía probatoria
+
+### 3.11.4. Manejo de Errores Silencioso
+
+**Principio:** El scraping debe fallar silenciosamente para no interrumpir el pipeline.
+
+**Implementación:**
+- Errores se registran como `warnings` en logs
+- Si falla la descarga, el flujo continúa normalmente
+- El sistema es robusto ante caídas de portales externos
+- Solo se registra un `warning` en metadatos del EDN
+
+**Ejemplo:**
+```python
+try:
+    downloaded_files = pip_manager.enrich_case(company, nis, output_dir)
+except Exception as e:
+    logger.warning(f"Error en enriquecimiento externo: {e}")
+    # Continuar sin scraping
+```
+
+### 3.11.5. Ciclo de Re-ingesta
+
+Los PDFs descargados **no se guardan estáticos**. Se re-inyectan en el pipeline completo:
+
+1. PDF descargado → `process_file()`
+2. Pasa por OCR y extracción
+3. Se clasifica y extrae entidades
+4. Se agrega al `document_inventory` con `provenance: SYSTEM_RETRIEVAL`
+5. Enriquece automáticamente el EDN con información adicional
+
+**Ventaja:** Los documentos oficiales se procesan igual que los subidos por el usuario, garantizando consistencia.
+
+## 3.12. Fase 9: Construcción de Timeline
+
+### 3.12.1. Objetivo
+Construir una línea temporal del caso extrayendo fechas clave para detectar silencios administrativos o cobros retroactivos ilegales.
+
+### 3.12.2. Lógica de Construcción
+
+**Función:** `build_timeline(edn) -> Dict`
+
+**Proceso:**
+1. Barre recursivamente `unified_context` y `document_inventory` buscando fechas clave:
+   - `fecha_reclamo` (fecha de ingreso)
+   - `fecha_respuesta` (desde CARTA_RESPUESTA)
+   - `fecha_inspeccion` (desde ORDEN_TRABAJO)
+   - `periodo_cobro_inicio` y `periodo_cobro_fin` (desde TABLA_CALCULO o `consolidated_facts`)
+
+2. Genera lista ordenada de eventos:
+   ```json
+   [
+     {
+       "date": "2023-05-10",
+       "event": "Inspección Técnica",
+       "source_doc": "uuid-123",
+       "type": "inspeccion",
+       "delta_days": 45
+     },
+     ...
+   ]
+   ```
+
+3. Calcula deltas entre eventos críticos:
+   - Reclamo → Respuesta (debe ser ≤ 30 días)
+   - Inspección → Inicio de cobro
+   - Duración del período de cobro (debe ser ≤ 12 meses)
+
+4. Detecta anomalías:
+   - **Silencio administrativo**: Delta reclamo → respuesta > 30 días
+   - **Periodo retroactivo ilegal**: Periodo de cobro > 12 meses
+
+### 3.12.3. Estructura de Salida
+
+El resultado se guarda en `edn.temporal_analysis`:
+
+```json
+{
+  "events": [
+    {
+      "date": "2023-05-10",
+      "event": "Ingreso del Reclamo",
+      "source_doc": null,
+      "type": "reclamo"
+    },
+    {
+      "date": "2023-06-25",
+      "event": "Respuesta de la Empresa",
+      "source_doc": "uuid-123",
+      "type": "respuesta",
+      "delta_days": 45
+    }
+  ],
+  "critical_deltas": {
+    "reclamo_to_respuesta": 45,
+    "inspeccion_to_cobro": 120,
+    "periodo_cobro_meses": 6.5
+  },
+  "warnings": [
+    "Silencio administrativo detectado: 45 días entre reclamo y respuesta (límite: 30 días)",
+    "Periodo retroactivo excede 12 meses: 18.5 meses"
+  ],
+  "incomplete": false
+}
+```
+
+### 3.12.4. Robustez
+
+- Funciona aunque falten fechas (marca `incomplete: true`)
+- Parsea múltiples formatos de fecha
+- Maneja errores de parsing sin fallar
+- Genera warnings descriptivos para fechas faltantes
+
+## 3.13. Fase 10: Persistencia en Base de Datos
+
+### 3.13.1. Proceso de Upsert
 
 **Entrada:**
 - EDN completo con entidades consolidadas
@@ -442,9 +592,9 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - Base de datos actualizada con historial preservado
 - Relaciones entre entidades establecidas
 
-## 3.12. Manejo de Errores y Casos Edge
+## 3.14. Manejo de Errores y Casos Edge
 
-### 3.12.1. Estrategia de Tolerancia a Fallos
+### 3.14.1. Estrategia de Tolerancia a Fallos
 
 **Principio:** Un documento fallido no debe detener el procesamiento del caso completo.
 
@@ -454,7 +604,7 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 - Continuación con siguiente archivo
 - Estado final: `COMPLETED` o `COMPLETED_WITH_WARNINGS`
 
-### 3.12.2. Validación de Integridad Post-Procesamiento
+### 3.14.2. Validación de Integridad Post-Procesamiento
 
 **Validaciones:**
 1. **RUT válido**: Verificar dígito verificador
@@ -463,7 +613,7 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 4. **Montos razonables**: Entre 1.000 y 10.000.000 CLP
 5. **Documentos críticos**: Al menos uno de `CARTA_RESPUESTA` o `TABLA_CALCULO`
 
-## 3.13. Librerías y Tecnologías
+## 3.15. Librerías y Tecnologías
 
 | Componente | Librería | Versión Mínima | Propósito |
 |------------|----------|----------------|-----------|
@@ -475,13 +625,16 @@ Construir el EDN completo que servirá como contrato de datos para los módulos 
 | **Word Documents** | `python-docx` | 1.1.0 | Lectura de documentos Word |
 | **Regex** | `regex` | 2023.0.0 | Expresiones regulares avanzadas |
 | **Date Parsing** | `dateutil` | 2.8.0 | Parsing flexible de fechas |
+| **Web Scraping** | `playwright` o `selenium` | Latest | Scraping de portales PIP |
+| **HTML Parsing** | `beautifulsoup4` | 4.12.0 | Parsing de HTML |
+| **HTTP Requests** | `requests` | 2.31.0 | Descarga de archivos |
 
 **Herramientas Externas (CLI):**
 - **qpdf**: Reparación de PDFs corruptos
 - **ghostscript**: Conversión a PDF/A
 - **tesseract-ocr**: Motor OCR (requiere instalación del sistema)
 
-## 3.14. Conclusión
+## 3.16. Conclusión
 
 El OMC es el corazón del sistema de ingesta. Su diseño permite transformar documentos no estructurados en datos analizables, construir una base de datos histórica que preserva la relación entre actores y eventos, y generar un contrato de datos estandarizado (EDN) que alimenta todos los módulos posteriores. La clave del éxito está en reconocer que cada tipo de documento tiene información única y diseñar el sistema para extraer y almacenar esa información de manera estructurada y consultable.
 
