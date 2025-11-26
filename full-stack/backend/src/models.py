@@ -23,6 +23,11 @@ class CaseStatus(str, Enum):
     RESUELTO = "RESUELTO"
     CERRADO = "CERRADO"
 
+class DocumentProvenance(str, Enum):
+    """Origen del documento: usuario o sistema"""
+    USER_UPLOAD = "USER_UPLOAD"  # Documento subido por el usuario
+    SYSTEM_RETRIEVAL = "SYSTEM_RETRIEVAL"  # Documento descargado por el sistema (scraping)
+
 class CerrarCasoRequest(BaseModel):
     resolucion_content: Optional[str] = None
     fecha_cierre: Optional[str] = None
@@ -49,6 +54,7 @@ class Document(BaseModel):
     standardized_name: Optional[str] = None
     extracted_data: Optional[Dict[str, Any]] = None
     metadata: Optional[Dict[str, Any]] = None
+    provenance: Optional[DocumentProvenance] = None  # Origen del documento (usuario o sistema)
 
 class MissingDocument(BaseModel):
     required_type: str
@@ -125,12 +131,20 @@ class EvidenceMap(BaseModel):
     # Ejemplo: {"periodo_meses": [EvidenceEntry(...)], "monto_cnr": [EvidenceEntry(...)]}
     pass  # Se implementa como Dict[str, List[EvidenceEntry]] en el modelo principal
 
+class TemporalAnalysis(BaseModel):
+    """Análisis temporal del caso: eventos, deltas y warnings"""
+    events: List[Dict[str, Any]]  # Lista ordenada de eventos con fechas
+    critical_deltas: Optional[Dict[str, int]] = None  # Deltas entre eventos críticos (días)
+    warnings: Optional[List[str]] = None  # Warnings temporales detectados
+    incomplete: Optional[bool] = False  # True si faltan fechas importantes
+
 class ExpedienteDigitalNormalizado(BaseModel):
     compilation_metadata: CompilationMetadata
     unified_context: UnifiedContext
     document_inventory: DocumentInventory
     consolidated_facts: Optional[Dict[str, Any]] = None  # Features consolidados (alias: features)
     evidence_map: Optional[Dict[str, List[Dict[str, Any]]]] = None  # Mapa de evidencias (alias: evidencias)
+    temporal_analysis: Optional[Dict[str, Any]] = None  # Análisis temporal (eventos, deltas, warnings)
     checklist: Optional[Checklist] = None
     materia: Optional[str] = None
     monto_disputa: Optional[float] = None
@@ -173,4 +187,19 @@ class UnifiedContextUpdateRequest(BaseModel):
     monto_disputa: Optional[float] = None
     empresa: Optional[str] = None
     fecha_ingreso: Optional[str] = None
+
+class CNRCalculationRequest(BaseModel):
+    """Request para cálculo de CNR (What-if)"""
+    historial_kwh: List[float]
+    tarifa_vigente: float
+    meses_a_recuperar: int
+    cim_override: Optional[float] = None  # CIM personalizado para simulación
+
+class CNRCalculationResponse(BaseModel):
+    """Response del cálculo de CNR"""
+    monto_calculado: float
+    diferencia_vs_cobrado: Optional[float] = None  # Si se proporciona monto_cobrado
+    detalle_calculo: Dict[str, Any]
+    breakdown_por_mes: List[Dict[str, Any]]
+    cim_aplicado: float
 

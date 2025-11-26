@@ -13,6 +13,10 @@ FILES_DIR = DATA_DIR / "Files"
 EXAMPLE_CASES_DIR = FILES_DIR
 RESOLUCIONES_DIR = DATA_DIR / "resoluciones"  # DEPRECATED: Las resoluciones ahora se guardan en la carpeta del caso
 TEMP_PDFS_DIR = DATA_DIR / "temp_pdfs"  # Para previews temporales
+TEMP_DOWNLOADS_DIR = DATA_DIR / "temp_downloads"  # Para PDFs descargados vía scraping
+
+# --- Directorios de Scrapers (opcional) ---
+SCRAPERS_DIR = BACKEND_ROOT / "scrapers"  # Directorio para scrapers personalizados (opcional)
 
 # --- Archivos de Datos Específicos ---
 MOCK_CASOS_PATH = DATA_DIR / "mock_casos.json"

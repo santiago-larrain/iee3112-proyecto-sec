@@ -103,7 +103,11 @@ export const casosAPI = {
     api.post(`/casos/${caseId}/cerrar`, {
       resolucion_content: resolucionContent,
       fecha_cierre: new Date().toISOString()
-    })
+    }),
+  
+  // Calcular CNR (What-if, no guarda en BD)
+  calculateCNR: (caseId, calculationData) =>
+    api.post(`/casos/${caseId}/calculate-cnr`, calculationData)
 }
 
 export default api

@@ -16,6 +16,9 @@ from .entity_extractor import EntityExtractor
 from .document_categorizer import add_functional_categories
 from .fact_extractor import construir_features
 from .strategy_selector import extraer_desde_fuentes
+from .scrapers.pip_manager import PIPManager
+from .timeline_builder import build_timeline
+from src.models import DocumentProvenance
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +31,7 @@ class DocumentProcessor:
         self.docx_extractor = DOCXExtractor()
         self.classifier = DocumentClassifier()
         self.entity_extractor = EntityExtractor()
+        self.pip_manager = PIPManager()
     
     def process_case(self, case_id: str, case_folder: Path) -> Dict[str, Any]:
         """
@@ -217,6 +221,84 @@ class DocumentProcessor:
             edn['consolidated_facts'] = {}
             edn['evidence_map'] = {}
         
+        # Fase 9: Enriquecimiento Externo (Scraping PIP)
+        try:
+            empresa = edn.get('empresa') or unified_context.get('empresa')
+            service_nis = unified_context.get('service_nis')
+            
+            if empresa and service_nis:
+                logger.info(f"Iniciando enriquecimiento externo para NIS {service_nis} de {empresa}")
+                
+                # Crear directorio temporal para descargas
+                temp_downloads_dir = case_folder / "temp_downloads"
+                temp_downloads_dir.mkdir(exist_ok=True)
+                
+                # Intentar descargar boletas
+                downloaded_files = self.pip_manager.enrich_case(
+                    company=empresa,
+                    nis=service_nis,
+                    output_dir=temp_downloads_dir
+                )
+                
+                # Re-inyectar documentos descargados en el pipeline
+                for downloaded_file in downloaded_files:
+                    try:
+                        logger.info(f"Re-inyectando documento descargado: {downloaded_file.name}")
+                        result = self.process_file(downloaded_file, case_folder)
+                        
+                        if result:
+                            # Marcar como SYSTEM_RETRIEVAL
+                            result['provenance'] = DocumentProvenance.SYSTEM_RETRIEVAL.value
+                            
+                            # Agregar al inventario
+                            level = result['level']
+                            doc_entry = {
+                                'type': result['type'],
+                                'file_id': result['file_id'],
+                                'original_name': result['original_name'],
+                                'standardized_name': result.get('standardized_name'),
+                                'extracted_data': result.get('extracted_data'),
+                                'metadata': result.get('metadata'),
+                                'provenance': DocumentProvenance.SYSTEM_RETRIEVAL.value
+                            }
+                            
+                            if level == 'level_1_critical':
+                                document_inventory['level_1_critical'].append(doc_entry)
+                            else:
+                                document_inventory['level_2_supporting'].append(doc_entry)
+                            
+                            # Actualizar categorías funcionales
+                            document_inventory = add_functional_categories(document_inventory)
+                            
+                            # Re-extraer features si es necesario
+                            # (Los documentos descargados pueden tener información adicional)
+                            logger.info(f"Documento {downloaded_file.name} procesado y agregado al inventario")
+                    
+                    except Exception as e:
+                        logger.warning(f"Error re-inyectando documento {downloaded_file.name}: {e}")
+                        continue
+                
+                # Actualizar document_inventory en EDN
+                edn['document_inventory'] = document_inventory
+                
+        except Exception as e:
+            logger.warning(f"Error en enriquecimiento externo (continuando sin scraping): {e}")
+            # Continuar sin scraping si hay error
+        
+        # Fase 10: Construcción de Timeline
+        try:
+            temporal_analysis = build_timeline(edn)
+            edn['temporal_analysis'] = temporal_analysis
+            logger.info(f"Timeline construido con {len(temporal_analysis.get('events', []))} eventos")
+        except Exception as e:
+            logger.warning(f"Error construyendo timeline: {e}")
+            edn['temporal_analysis'] = {
+                'events': [],
+                'critical_deltas': {},
+                'warnings': [f"Error construyendo timeline: {str(e)}"],
+                'incomplete': True
+            }
+        
         return edn
     
     def process_file(self, file_path: Path, base_path: Path) -> Optional[Dict[str, Any]]:
@@ -284,7 +366,8 @@ class DocumentProcessor:
             'level': level,
             'file_path': relative_path,
             'entities': entities,
-            'metadata': metadata
+            'metadata': metadata,
+            'provenance': None  # Se asignará después según origen
         }
         
         # Agregar extracted_data según tipo

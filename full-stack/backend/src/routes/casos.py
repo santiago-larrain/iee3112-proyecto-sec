@@ -17,10 +17,13 @@ from src.models import (
     UnifiedContextUpdateRequest,
     CerrarCasoRequest,
     ChecklistStatus,
-    DocumentType
+    DocumentType,
+    CNRCalculationRequest,
+    CNRCalculationResponse
 )
 from src.database.json_db_manager import JSONDBManager
 from src.engine.min.checklist_generator import ChecklistGenerator
+from src.engine.min.calculator import CNRSolver
 from src.engine.omc.document_categorizer import ensure_functional_categories
 from src.engine.mgr.resolucion_generator import ResolucionGenerator
 from src.utils.helpers import (
@@ -48,6 +51,7 @@ logger = logging.getLogger(__name__)
 db_manager = JSONDBManager(base_path=DATABASE_DIR)
 checklist_generator = ChecklistGenerator()
 resolucion_generator = ResolucionGenerator()
+cnr_solver = CNRSolver()
 
 # --- Cache en memoria para cambios temporales ---
 cases_store: Dict[str, Any] = {}
@@ -1133,6 +1137,39 @@ def cleanup_preview(case_id: str, request: Request):
     """Limpia los archivos temporales de preview para un caso específico"""
     cleanup_temp_previews(case_id=case_id)
     return {"message": f"Previews temporales del caso {case_id} eliminados"}
+
+@router.post("/casos/{case_id}/calculate-cnr", response_model=CNRCalculationResponse)
+def calculate_cnr(case_id: str, calculation_req: CNRCalculationRequest, request: Request):
+    """
+    Calcula el monto CNR según fórmula normativa (What-if, no guarda en BD)
+    Permite al funcionario simular diferentes escenarios modificando CIM o meses
+    """
+    try:
+        # Obtener monto cobrado del caso si está disponible
+        monto_cobrado = None
+        try:
+            caso = db_manager.get_caso_by_case_id(case_id)
+            if caso:
+                monto_cobrado = caso.get("monto_disputa")
+        except Exception as e:
+            logger.warning(f"No se pudo obtener monto del caso {case_id}: {e}")
+        
+        # Calcular CNR
+        resultado = cnr_solver.calculate_cnr(
+            historial_kwh=calculation_req.historial_kwh,
+            tarifa_vigente=calculation_req.tarifa_vigente,
+            meses_a_recuperar=calculation_req.meses_a_recuperar,
+            cim_override=calculation_req.cim_override,
+            monto_cobrado=monto_cobrado
+        )
+        
+        return CNRCalculationResponse(**resultado)
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error calculando CNR para caso {case_id}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error interno calculando CNR: {str(e)}")
 
 @router.post("/casos/{case_id}/cerrar")
 def cerrar_caso(case_id: str,
