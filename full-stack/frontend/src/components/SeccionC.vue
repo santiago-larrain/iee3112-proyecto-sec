@@ -19,6 +19,7 @@
           :key="item.id"
           :item="item"
           :case-id="caseId"
+          :document-inventory="documentInventory"
           @validated="onItemValidated"
         />
       </div>
@@ -37,6 +38,7 @@
           :key="item.id"
           :item="item"
           :case-id="caseId"
+          :document-inventory="documentInventory"
           @validated="onItemValidated"
         />
       </div>
@@ -55,6 +57,7 @@
           :key="item.id"
           :item="item"
           :case-id="caseId"
+          :document-inventory="documentInventory"
           @validated="onItemValidated"
         />
       </div>
@@ -86,6 +89,10 @@ export default {
     caseId: {
       type: String,
       required: true
+    },
+    documentInventory: {
+      type: Object,
+      default: null
     }
   },
   computed: {

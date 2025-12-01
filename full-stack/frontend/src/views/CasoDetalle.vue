@@ -37,6 +37,7 @@
       <SeccionC
         :checklist="caso.checklist"
         :case-id="caseId"
+        :document-inventory="caso.document_inventory"
         @checklist-actualizado="recargarCaso"
       />
 

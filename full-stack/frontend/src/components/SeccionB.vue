@@ -211,6 +211,7 @@
               :src="documentUrl"
               class="pdf-viewer"
               frameborder="0"
+              @error="handleIframeError"
             ></iframe>
             
             <!-- Image Viewer -->
@@ -219,6 +220,7 @@
               :src="documentUrl"
               class="image-viewer"
               alt="Vista previa"
+              @error="handleImageError"
             />
             
             <!-- DOCX Viewer (converted to PDF) -->
@@ -373,6 +375,14 @@ export default {
       this.documentUrl = null
       this.documentError = null
     },
+    handleIframeError() {
+      this.documentError = 'Error al cargar el documento. El archivo puede no existir o estar corrupto.'
+      this.documentUrl = null
+    },
+    handleImageError() {
+      this.documentError = 'Error al cargar la imagen. El archivo puede no existir o estar corrupto.'
+      this.documentUrl = null
+    },
     async cargarDocumento() {
       if (!this.documentoSeleccionado) return
       
@@ -382,16 +392,23 @@ export default {
       try {
         // Construir URL del endpoint de preview
         const fileId = this.documentoSeleccionado.file_id
-        // DOCX ahora se convierte automáticamente a PDF en el backend
         const apiUrl = `http://localhost:8000/api/casos/${this.caseId}/documentos/${fileId}/preview`
         
-        // Para PDFs, imágenes y DOCX (convertido a PDF), usar directamente la URL
+        // Verificar que el archivo existe antes de intentar cargarlo
+        const response = await fetch(apiUrl, { method: 'HEAD' })
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ detail: response.statusText }))
+          throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`)
+        }
+        
+        // Si la verificación es exitosa, usar la URL
         this.documentUrl = apiUrl
         this.loadingDocument = false
       } catch (error) {
         console.error('Error cargando documento:', error)
         this.documentError = error.message || 'Error desconocido'
         this.loadingDocument = false
+        this.documentUrl = null
       }
     }
   }

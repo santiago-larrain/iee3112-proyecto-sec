@@ -83,6 +83,65 @@
       </div>
     </div>
     
+    <!-- Modal Visor de Documento -->
+    <div v-if="documentoSeleccionado" class="modal-overlay" @click="cerrarVisorDocumento">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h4>Vista Previa del Documento</h4>
+          <button @click="cerrarVisorDocumento" class="modal-close">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="document-preview">
+            <!-- Loading state -->
+            <div v-if="loadingDocument" class="loading-state">
+              <p>Cargando documento...</p>
+            </div>
+            
+            <!-- Error state -->
+            <div v-if="documentError" class="error-state">
+              <p>❌ Error al cargar el documento: {{ documentError }}</p>
+              <button @click="cargarDocumento" class="btn-retry">Reintentar</button>
+            </div>
+            
+            <!-- PDF Viewer -->
+            <iframe
+              v-if="documentUrl && !loadingDocument && !documentError && isPdf"
+              :src="documentUrl"
+              class="pdf-viewer"
+              frameborder="0"
+              @error="handleIframeError"
+            ></iframe>
+            
+            <!-- Image Viewer -->
+            <img
+              v-if="documentUrl && !loadingDocument && !documentError && isImage"
+              :src="documentUrl"
+              class="image-viewer"
+              alt="Vista previa"
+              @error="handleImageError"
+            />
+            
+            <!-- DOCX Viewer (converted to PDF) -->
+            <iframe
+              v-if="documentUrl && !loadingDocument && !documentError && isDocx"
+              :src="documentUrl"
+              class="pdf-viewer"
+              frameborder="0"
+              @error="handleIframeError"
+            ></iframe>
+            
+            <!-- Fallback para otros tipos -->
+            <div v-if="documentUrl && !loadingDocument && !documentError && !isPdf && !isImage && !isDocx" class="other-document">
+              <p>📄 Documento no se puede previsualizar</p>
+              <a :href="documentUrl" target="_blank" class="btn-download">
+                Descargar Documento
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Calculadora CNR -->
     <div v-if="showCalculator" class="modal-overlay" @click="closeCalculator">
       <div class="modal-content calculator-modal" @click.stop>
@@ -195,6 +254,10 @@ export default {
     caseId: {
       type: String,
       required: true
+    },
+    documentInventory: {
+      type: Object,
+      default: null
     }
   },
   data() {
@@ -209,7 +272,13 @@ export default {
       },
       historialInput: '',
       calculationResult: null,
-      calculating: false
+      calculating: false,
+      documentoSeleccionado: null,
+      documentUrl: null,
+      loadingDocument: false,
+      documentError: null,
+      selectedFileId: null,
+      selectedPageIndex: null
     }
   },
   computed: {
@@ -219,6 +288,22 @@ export default {
       const id = (this.item.id || '').toLowerCase()
       return title.includes('monto') || title.includes('cnr') || title.includes('cálculo') || 
              id.includes('c.2') || id.includes('monto')
+    },
+    isPdf() {
+      if (!this.documentoSeleccionado) return false
+      const name = this.documentoSeleccionado.original_name || ''
+      return name.toLowerCase().endsWith('.pdf')
+    },
+    isImage() {
+      if (!this.documentoSeleccionado) return false
+      const name = this.documentoSeleccionado.original_name || ''
+      const ext = name.toLowerCase().split('.').pop()
+      return ['jpg', 'jpeg', 'png', 'gif'].includes(ext)
+    },
+    isDocx() {
+      if (!this.documentoSeleccionado) return false
+      const name = this.documentoSeleccionado.original_name || ''
+      return name.toLowerCase().endsWith('.docx')
     }
   },
   methods: {
@@ -253,14 +338,97 @@ export default {
       return JSON.stringify(coords)
     },
     async openDocument(fileId, pageIndex = null) {
-      // Abrir documento en nueva pestaña o modal
-      const url = `/api/casos/${this.caseId}/documentos/${fileId}/preview`
-      if (pageIndex !== null && pageIndex !== undefined) {
-        // Si hay página específica, agregar como parámetro (el backend puede usarlo en el futuro)
-        window.open(`${url}?page=${pageIndex}`, '_blank')
-      } else {
-        window.open(url, '_blank')
+      // Abrir documento en modal
+      this.selectedFileId = fileId
+      this.selectedPageIndex = pageIndex
+      
+      // Buscar el documento en el document_inventory si está disponible
+      let documentoInfo = null
+      if (this.documentInventory) {
+        // Buscar en todas las categorías
+        const categories = ['reclamo_respuesta', 'informe_evidencias', 'historial_calculos', 'otros', 
+                           'level_1_critical', 'level_2_supporting', 'level_0_missing']
+        for (const category of categories) {
+          const docs = this.documentInventory[category] || []
+          documentoInfo = docs.find(doc => doc.file_id === fileId)
+          if (documentoInfo) break
+        }
       }
+      
+      // Si no se encuentra en document_inventory, intentar obtenerlo del backend
+      if (!documentoInfo) {
+        try {
+          // Obtener información del caso para buscar el documento
+          const casoResponse = await casosAPI.getCaso(this.caseId)
+          const caso = casoResponse.data
+          const docInventory = caso.document_inventory || {}
+          const categories = ['reclamo_respuesta', 'informe_evidencias', 'historial_calculos', 'otros',
+                             'level_1_critical', 'level_2_supporting', 'level_0_missing']
+          for (const category of categories) {
+            const docs = docInventory[category] || []
+            documentoInfo = docs.find(doc => doc.file_id === fileId)
+            if (documentoInfo) break
+          }
+        } catch (error) {
+          console.warn('No se pudo obtener información del documento:', error)
+        }
+      }
+      
+      // Crear objeto documento para el modal
+      this.documentoSeleccionado = {
+        file_id: fileId,
+        original_name: documentoInfo?.original_name || `Documento ${fileId}`,
+        standardized_name: documentoInfo?.standardized_name,
+        page_index: pageIndex,
+        extracted_data: documentoInfo?.extracted_data,
+        metadata: documentoInfo?.metadata
+      }
+      await this.cargarDocumento()
+    },
+    async cargarDocumento() {
+      if (!this.documentoSeleccionado || !this.selectedFileId) return
+      
+      this.loadingDocument = true
+      this.documentError = null
+      
+      try {
+        const apiUrl = `http://localhost:8000/api/casos/${this.caseId}/documentos/${this.selectedFileId}/preview`
+        if (this.selectedPageIndex !== null && this.selectedPageIndex !== undefined) {
+          // Agregar parámetro de página si está disponible
+          // Nota: El backend puede usar esto en el futuro para navegar a una página específica
+        }
+        
+        // Verificar que el archivo existe antes de intentar cargarlo
+        const response = await fetch(apiUrl, { method: 'HEAD' })
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({ detail: response.statusText }))
+          throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`)
+        }
+        
+        // Si la verificación es exitosa, usar la URL
+        this.documentUrl = apiUrl
+        this.loadingDocument = false
+      } catch (error) {
+        console.error('Error cargando documento:', error)
+        this.documentError = error.message || 'Error desconocido'
+        this.loadingDocument = false
+        this.documentUrl = null
+      }
+    },
+    cerrarVisorDocumento() {
+      this.documentoSeleccionado = null
+      this.documentUrl = null
+      this.documentError = null
+      this.selectedFileId = null
+      this.selectedPageIndex = null
+    },
+    handleIframeError() {
+      this.documentError = 'Error al cargar el documento. El archivo puede no existir o estar corrupto.'
+      this.documentUrl = null
+    },
+    handleImageError() {
+      this.documentError = 'Error al cargar la imagen. El archivo puede no existir o estar corrupto.'
+      this.documentUrl = null
     },
     async handleValidationChange(event) {
       const validated = event.target.checked
@@ -294,40 +462,81 @@ export default {
     },
     async calculateCNR() {
       this.calculating = true
+      this.calculationResult = null
+      
       try {
         const historial = this.parseHistorial()
         
-        if (historial.length === 0 && !this.calculatorData.cim) {
-          alert('Debe proporcionar historial de consumo o CIM')
+        // Validar que haya historial o CIM
+        if (historial.length === 0 && (!this.calculatorData.cim || this.calculatorData.cim <= 0)) {
+          alert('Debe proporcionar historial de consumo o CIM válido')
+          this.calculating = false
           return
         }
         
-        if (!this.calculatorData.meses || this.calculatorData.meses <= 0) {
-          alert('Debe especificar meses a recuperar')
+        // Validar meses
+        const meses = parseInt(this.calculatorData.meses)
+        if (!meses || meses <= 0 || isNaN(meses)) {
+          alert('Debe especificar meses a recuperar (mayor a 0)')
+          this.calculating = false
           return
         }
         
-        if (!this.calculatorData.tarifa || this.calculatorData.tarifa <= 0) {
-          alert('Debe especificar tarifa vigente')
+        // Validar tarifa
+        const tarifa = parseFloat(this.calculatorData.tarifa)
+        if (!tarifa || tarifa <= 0 || isNaN(tarifa)) {
+          alert('Debe especificar tarifa vigente (mayor a 0)')
+          this.calculating = false
           return
         }
+        
+        // Preparar historial: si hay historial, usarlo; si no, usar CIM como único valor
+        let historial_kwh = historial
+        if (historial.length === 0 && this.calculatorData.cim) {
+          // Si solo hay CIM, crear un historial con ese valor para el cálculo
+          historial_kwh = [parseFloat(this.calculatorData.cim)]
+        }
+        
+        // Validar que el historial tenga valores válidos
+        if (historial_kwh.length === 0 || historial_kwh.some(v => isNaN(v) || v <= 0)) {
+          alert('El historial de consumo debe contener valores numéricos válidos mayores a 0')
+          this.calculating = false
+          return
+        }
+        
+        const cimOverride = this.calculatorData.cim ? parseFloat(this.calculatorData.cim) : null
         
         const response = await casosAPI.calculateCNR(this.caseId, {
-          historial_kwh: historial.length > 0 ? historial : [this.calculatorData.cim || 0],
-          tarifa_vigente: this.calculatorData.tarifa,
-          meses_a_recuperar: this.calculatorData.meses,
-          cim_override: this.calculatorData.cim || null
+          historial_kwh: historial_kwh,
+          tarifa_vigente: tarifa,
+          meses_a_recuperar: meses,
+          cim_override: cimOverride
         })
         
-        this.calculationResult = response
+        // Acceder a response.data ya que axios devuelve { data: {...}, status: ... }
+        const result = response.data || response
+        
+        // Validar que el resultado tenga los campos esperados
+        if (!result || typeof result.monto_calculado === 'undefined' || isNaN(result.monto_calculado)) {
+          console.error('Respuesta inválida del servidor:', result)
+          alert('Error: El servidor devolvió una respuesta inválida. Verifique los valores ingresados.')
+          return
+        }
+        
+        this.calculationResult = result
       } catch (error) {
         console.error('Error calculando CNR:', error)
-        alert('Error al calcular CNR: ' + (error.response?.data?.detail || error.message || 'Error desconocido'))
+        const errorMsg = error.response?.data?.detail || error.message || 'Error desconocido'
+        alert('Error al calcular CNR: ' + errorMsg)
+        this.calculationResult = null
       } finally {
         this.calculating = false
       }
     },
     formatNumber(num) {
+      if (num === null || num === undefined || isNaN(num)) {
+        return '0.00'
+      }
       return Number(num).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     }
   }
@@ -733,6 +942,79 @@ export default {
 
 .breakdown-table tbody tr:hover {
   background: #f5f5f5;
+}
+
+/* Estilos para modal de documento */
+.document-preview {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.loading-state,
+.error-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.error-state {
+  color: #d32f2f;
+}
+
+.btn-retry {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-retry:hover {
+  background: #5568d3;
+}
+
+.pdf-viewer {
+  width: 100%;
+  height: 70vh;
+  min-height: 500px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.image-viewer {
+  max-width: 100%;
+  max-height: 70vh;
+  margin: 0 auto;
+  display: block;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.other-document {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #666;
+}
+
+.btn-download {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-download:hover {
+  background: #5568d3;
 }
 </style>
 
