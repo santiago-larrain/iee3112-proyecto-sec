@@ -3,10 +3,10 @@
     "id": 1,
     "caso_id": 1,
     "case_id": "230125-000509",
-    "type": "TABLA_CALCULO",
-    "file_id": "c042cd0e-439a-4a16-986c-04fc500363b3",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "10395feb-83c0-4859-81e0-e62ca7c72909",
     "original_name": "Cálculo.pdf",
-    "standardized_name": "TABLA_CALCULO - Cálculo.pdf",
+    "standardized_name": "Carta de Respuesta - Cálculo",
     "file_path": "Cálculo.pdf",
     "relative_path": "230125-000509/Cálculo.pdf",
     "level": "level_1_critical",
@@ -24,10 +24,10 @@
     "id": 2,
     "caso_id": 1,
     "case_id": "230125-000509",
-    "type": "INFORME_CNR",
-    "file_id": "5c84331c-990a-4d84-adec-34fe7545e967",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "20e606fa-bd77-4a15-9968-18a15c3a2dc6",
     "original_name": "Informe CNR  Serv  10867348(2).pdf",
-    "standardized_name": "INFORME_CNR - Informe CNR  Serv  10867348(2).pdf",
+    "standardized_name": "Carta de Respuesta - Informe CNR  Serv  10867348(2)",
     "file_path": "Informe CNR  Serv  10867348(2).pdf",
     "relative_path": "230125-000509/Informe CNR  Serv  10867348(2).pdf",
     "level": "level_1_critical",
@@ -45,7 +45,7 @@
     "caso_id": 1,
     "case_id": "230125-000509",
     "type": "CARTA_RESPUESTA",
-    "file_id": "62da2453-466b-40b5-b898-3674a326b684",
+    "file_id": "fb8ccf7e-5915-4797-a4d6-625e92680b6a",
     "original_name": "Respuesta Reclamo 2642280.pdf",
     "standardized_name": "Carta de Respuesta - Respuesta Reclamo 2642280",
     "file_path": "Respuesta Reclamo 2642280.pdf",
@@ -65,7 +65,7 @@
     "caso_id": 1,
     "case_id": "230125-000509",
     "type": "CARTA_RESPUESTA",
-    "file_id": "1b0d3585-badc-4478-9ba4-c910edf60c65",
+    "file_id": "065eddf1-60a5-4800-8b86-3ff109d85c66",
     "original_name": "Respuesta Reclamo 7823459.pdf",
     "standardized_name": "Carta de Respuesta - Respuesta Reclamo 7823459",
     "file_path": "Respuesta Reclamo 7823459.pdf",
@@ -85,7 +85,7 @@
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "CARTA_RESPUESTA",
-    "file_id": "c14d6a8a-2e7d-4caa-b28b-d32dfa0d956e",
+    "file_id": "cc9c0af1-f918-4f3a-ada3-3a88d5b2e343",
     "original_name": "1982860-SI.pdf",
     "standardized_name": "Carta de Respuesta - 1982860-SI",
     "file_path": "1982860-SI.pdf",
@@ -105,7 +105,7 @@
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "CARTA_RESPUESTA",
-    "file_id": "3aab231f-bcdd-4ab6-b6ec-1e2c22df113e",
+    "file_id": "4cbf4cd4-4114-431d-961d-2d276f75f7a5",
     "original_name": "RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023",
     "file_path": "RPT_CNR_SEC_10_ref_231220-000557_nrocliente_585416-4_inc_2095533_21-12-2023.docx",
@@ -127,7 +127,7 @@
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "TABLA_CALCULO",
-    "file_id": "539be197-7953-4e99-9e84-1b014480668b",
+    "file_id": "4430c1a7-0b18-41bb-a975-db1157856ee7",
     "original_name": "1982860-1966146-T.pdf",
     "standardized_name": "Tabla de Cálculo - 1982860-1966146-T",
     "file_path": null,
@@ -151,7 +151,7 @@
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "CARTA_RESPUESTA",
-    "file_id": "f772af25-5c36-4d13-b928-9fa8f1f83fc0",
+    "file_id": "32d9e890-df9a-4fe5-b33a-1518ef6523b6",
     "original_name": "1982860-Calculo_2023_9677.pdf",
     "standardized_name": "Carta de Respuesta - 1982860-Calculo_2023_9677",
     "file_path": null,
@@ -172,7 +172,7 @@
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "CARTA_RESPUESTA",
-    "file_id": "6feafa70-7b98-431f-84b4-47cc8db4cd99",
+    "file_id": "ecff5b91-8ed2-4b70-84ea-9b8bf40194b1",
     "original_name": "1982860-Caso585416_4.pdf",
     "standardized_name": "Carta de Respuesta - 1982860-Caso585416_4",
     "file_path": null,
@@ -193,7 +193,66 @@
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "13f85e6b-0b85-4fb0-8cdc-f86ad65db8e9",
+    "file_id": "97dc7dc7-86c3-4851-b5e4-1a322e9a53fe",
+    "original_name": "1982860-Cam_2023_9677.pdf",
+    "standardized_name": "Evidencia Fotográfica - 1982860-Cam_2023_9677",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "1982860-Cam_2023_9677.pdf",
+      "file_size": 1354365,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 11,
+    "caso_id": 2,
+    "case_id": "231220-000557",
+    "type": "GRAFICO_CONSUMO",
+    "file_id": "48f82db6-ded3-45b8-8fe6-45a987006964",
+    "original_name": "1982860-CONSUMOS.pdf",
+    "standardized_name": "Gráfico de Consumo - 1982860-CONSUMOS",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "1982860-CONSUMOS.pdf",
+      "file_size": 63432,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 12,
+    "caso_id": 2,
+    "case_id": "231220-000557",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "8a3a7582-fc57-473d-934a-635fc60b599f",
+    "original_name": "1982860-Fotografias_2023_9677.pdf",
+    "standardized_name": "Evidencia Fotográfica - 1982860-Fotografias_2023_9677",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "1982860-Fotografias_2023_9677.pdf",
+      "file_size": 1316894,
+      "num_pages": 14,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 13,
+    "caso_id": 2,
+    "case_id": "231220-000557",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "97dc7dc7-86c3-4851-b5e4-1a322e9a53fe",
     "original_name": "1982860-Cam_2023_9677.pdf",
     "standardized_name": "Evidencia Fotográfica - 1982860-Cam_2023_9677",
     "file_path": null,
@@ -210,11 +269,11 @@
     }
   },
   {
-    "id": 11,
+    "id": 14,
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "GRAFICO_CONSUMO",
-    "file_id": "be540eab-4d7b-4657-a847-7be3627239f5",
+    "file_id": "48f82db6-ded3-45b8-8fe6-45a987006964",
     "original_name": "1982860-CONSUMOS.pdf",
     "standardized_name": "Gráfico de Consumo - 1982860-CONSUMOS",
     "file_path": null,
@@ -227,11 +286,11 @@
     }
   },
   {
-    "id": 12,
+    "id": 15,
     "caso_id": 2,
     "case_id": "231220-000557",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "0174abd6-f4e7-44d0-9151-b1c9565196ec",
+    "file_id": "8a3a7582-fc57-473d-934a-635fc60b599f",
     "original_name": "1982860-Fotografias_2023_9677.pdf",
     "standardized_name": "Evidencia Fotográfica - 1982860-Fotografias_2023_9677",
     "file_path": null,
@@ -248,11 +307,11 @@
     }
   },
   {
-    "id": 13,
+    "id": 16,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "73f88612-328e-45c2-bbe2-a12a23b14bc8",
+    "file_id": "88875376-2475-45ac-9482-983cc55df703",
     "original_name": "Calculo_CNR_N°_608749.pdf",
     "standardized_name": "Carta de Respuesta - Calculo_CNR_N°_608749",
     "file_path": null,
@@ -268,11 +327,11 @@
     }
   },
   {
-    "id": 14,
+    "id": 17,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "dd76af0c-1980-4e1a-afa7-24eee5a0086e",
+    "file_id": "6606e664-705a-4934-8c03-b130c5f8256c",
     "original_name": "Complemento caso SEC N°1991990.pdf",
     "standardized_name": "Carta de Respuesta - Complemento caso SEC N°1991990",
     "file_path": null,
@@ -288,11 +347,11 @@
     }
   },
   {
-    "id": 15,
+    "id": 18,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "TABLA_CALCULO",
-    "file_id": "6c6730ae-ca4d-44ac-8b83-5645eab2617e",
+    "file_id": "4f670aa0-3024-49bc-b4f3-b6a96c8f1efe",
     "original_name": "Informe Instalación Equipo Medida en Acometida Cliente.pdf",
     "standardized_name": "Tabla de Cálculo - Informe Instalación Equipo Medida en Acometida Cliente",
     "file_path": null,
@@ -305,11 +364,11 @@
     }
   },
   {
-    "id": 16,
+    "id": 19,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "ORDEN_TRABAJO",
-    "file_id": "d50d8a7b-72d8-41c4-a7bf-e2844f370b00",
+    "file_id": "5fecdc1f-d3be-4c25-b7a4-3071b4ffcd0f",
     "original_name": "Orden de trabajo N°197803311 12-04.2023.pdf",
     "standardized_name": "Orden de Trabajo - Orden de trabajo N°197803311 12-04.2023",
     "file_path": null,
@@ -322,11 +381,11 @@
     }
   },
   {
-    "id": 17,
+    "id": 20,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "f12e8ce5-c883-4790-89c9-930f14353a6d",
+    "file_id": "d7e991ee-8d37-47a9-adf7-30ec42c6ad50",
     "original_name": "Periodo_CNR_(Quiebre_Consumo)_N°_608749.pdf",
     "standardized_name": "Carta de Respuesta - Periodo_CNR_(Quiebre_Consumo)_N°_608749",
     "file_path": null,
@@ -342,11 +401,11 @@
     }
   },
   {
-    "id": 18,
+    "id": 21,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "5cfe01a7-4788-47b0-a0d2-ea1ea23a015a",
+    "file_id": "54311199-59a5-4894-9ceb-5554f9d0d89b",
     "original_name": "Reclamo_ingresado_por_cliente_N°_117350430.pdf",
     "standardized_name": "Carta de Respuesta - Reclamo_ingresado_por_cliente_N°_117350430",
     "file_path": null,
@@ -363,11 +422,11 @@
     }
   },
   {
-    "id": 19,
+    "id": 22,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "5c76ff38-91fb-4782-a263-24100e570288",
+    "file_id": "1e19bd17-ddf7-4691-8a2f-08fd439c9fee",
     "original_name": "Respuesta_Reclamo_N°117350430.-.pdf",
     "standardized_name": "Carta de Respuesta - Respuesta_Reclamo_N°117350430.-",
     "file_path": null,
@@ -384,11 +443,133 @@
     }
   },
   {
-    "id": 20,
+    "id": 23,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "OTROS",
-    "file_id": "94d944d7-18e2-4bb3-92f1-294c1be38d19",
+    "file_id": "34d028cc-5eb9-4979-8dac-33f9099055bb",
+    "original_name": "ANEXO N°1.pdf",
+    "standardized_name": "Documento - ANEXO N°1",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "ANEXO N°1.pdf",
+      "file_size": 303036,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 24,
+    "caso_id": 3,
+    "case_id": "240108-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "086e0aa3-d4ed-4f99-aedb-11ee5411099b",
+    "original_name": "F_Fachada.jpg",
+    "standardized_name": "Evidencia Fotográfica - F_Fachada",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "F_Fachada.jpg",
+      "file_size": 466248,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "fachada"
+      ]
+    }
+  },
+  {
+    "id": 25,
+    "caso_id": 3,
+    "case_id": "240108-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "93ae14f2-e5df-4c3f-bf63-87af356715c5",
+    "original_name": "Notificación no permite cambio de medidor 12.04.2023-1.jpg",
+    "standardized_name": "Evidencia Fotográfica - Notificación no permite cambio de medidor 12.04.2023-1",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Notificación no permite cambio de medidor 12.04.2023-1.jpg",
+      "file_size": 350680,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "medidor"
+      ]
+    }
+  },
+  {
+    "id": 26,
+    "caso_id": 3,
+    "case_id": "240108-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "72c1de3c-5920-4b32-b64d-c47e019cebdd",
+    "original_name": "Notificación No Permite el cambio de medidor 12.04.2023-2.jpg",
+    "standardized_name": "Evidencia Fotográfica - Notificación No Permite el cambio de medidor 12.04.2023-2",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Notificación No Permite el cambio de medidor 12.04.2023-2.jpg",
+      "file_size": 393323,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "medidor"
+      ]
+    }
+  },
+  {
+    "id": 27,
+    "caso_id": 3,
+    "case_id": "240108-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "e18f2ca6-c69f-4569-8dc3-f25f56c2dfc5",
+    "original_name": "Notificación_12-04-2024.jpg",
+    "standardized_name": "Evidencia Fotográfica - Notificación_12-04-2024",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Notificación_12-04-2024.jpg",
+      "file_size": 439606,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 28,
+    "caso_id": 3,
+    "case_id": "240108-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "c7af4ca3-d0d0-4d70-b489-5501c0a3696f",
+    "original_name": "Resultado de equpo contrastador -84%.jpg",
+    "standardized_name": "Evidencia Fotográfica - Resultado de equpo contrastador -84%",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Resultado de equpo contrastador -84%.jpg",
+      "file_size": 221291,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 29,
+    "caso_id": 3,
+    "case_id": "240108-000010",
+    "type": "OTROS",
+    "file_id": "34d028cc-5eb9-4979-8dac-33f9099055bb",
     "original_name": "ANEXO N°1.pdf",
     "standardized_name": "Documento - ANEXO N°1",
     "file_path": null,
@@ -401,11 +582,11 @@
     }
   },
   {
-    "id": 21,
+    "id": 30,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "91534706-e8d1-4cef-9381-9627622443e4",
+    "file_id": "086e0aa3-d4ed-4f99-aedb-11ee5411099b",
     "original_name": "F_Fachada.jpg",
     "standardized_name": "Evidencia Fotográfica - F_Fachada",
     "file_path": null,
@@ -422,11 +603,11 @@
     }
   },
   {
-    "id": 22,
+    "id": 31,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "d6872d3f-f275-4837-b2b8-319441297236",
+    "file_id": "93ae14f2-e5df-4c3f-bf63-87af356715c5",
     "original_name": "Notificación no permite cambio de medidor 12.04.2023-1.jpg",
     "standardized_name": "Evidencia Fotográfica - Notificación no permite cambio de medidor 12.04.2023-1",
     "file_path": null,
@@ -443,11 +624,11 @@
     }
   },
   {
-    "id": 23,
+    "id": 32,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "2ada35c4-6271-4371-9a66-fc1cc76f68b4",
+    "file_id": "72c1de3c-5920-4b32-b64d-c47e019cebdd",
     "original_name": "Notificación No Permite el cambio de medidor 12.04.2023-2.jpg",
     "standardized_name": "Evidencia Fotográfica - Notificación No Permite el cambio de medidor 12.04.2023-2",
     "file_path": null,
@@ -464,11 +645,11 @@
     }
   },
   {
-    "id": 24,
+    "id": 33,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "14a6cb47-51d8-4d8c-a21a-2aa1df74a3b2",
+    "file_id": "e18f2ca6-c69f-4569-8dc3-f25f56c2dfc5",
     "original_name": "Notificación_12-04-2024.jpg",
     "standardized_name": "Evidencia Fotográfica - Notificación_12-04-2024",
     "file_path": null,
@@ -485,11 +666,11 @@
     }
   },
   {
-    "id": 25,
+    "id": 34,
     "caso_id": 3,
     "case_id": "240108-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "ce1653fd-10b0-4509-b218-61abe177b222",
+    "file_id": "c7af4ca3-d0d0-4d70-b489-5501c0a3696f",
     "original_name": "Resultado de equpo contrastador -84%.jpg",
     "standardized_name": "Evidencia Fotográfica - Resultado de equpo contrastador -84%",
     "file_path": null,
@@ -506,11 +687,11 @@
     }
   },
   {
-    "id": 26,
+    "id": 35,
     "caso_id": 4,
     "case_id": "240110-000679",
     "type": "CARTA_RESPUESTA",
-    "file_id": "391f69b6-18eb-4347-a531-3a4a238b50b4",
+    "file_id": "bb1c1796-99a7-4dd0-bc53-7adfe3153c96",
     "original_name": "Caso SEC N° 1994324, cliente Nº 4421.pdf",
     "standardized_name": "Carta de Respuesta - Caso SEC N° 1994324, cliente Nº 4421",
     "file_path": "Caso SEC N° 1994324, cliente Nº 4421.pdf",
@@ -527,11 +708,11 @@
     }
   },
   {
-    "id": 27,
+    "id": 36,
     "caso_id": 4,
     "case_id": "240110-000679",
     "type": "CARTA_RESPUESTA",
-    "file_id": "b4dad84b-840e-49ff-90a9-448893059461",
+    "file_id": "12bb9f12-7b9f-4fe8-b82b-6a9cafad8765",
     "original_name": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024",
     "file_path": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_11-01-2024.docx",
@@ -549,11 +730,11 @@
     }
   },
   {
-    "id": 28,
+    "id": 37,
     "caso_id": 4,
     "case_id": "240110-000679",
     "type": "CARTA_RESPUESTA",
-    "file_id": "7c91f124-96ea-4213-a401-d17535244f9b",
+    "file_id": "cd671aff-d19c-4306-8a19-48b19a15d69d",
     "original_name": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024",
     "file_path": "RPT_CNR_SEC_18_ref_240110-000679_nrocliente_4421099_inc_2109035_12-01-2024.docx",
@@ -571,11 +752,11 @@
     }
   },
   {
-    "id": 29,
+    "id": 38,
     "caso_id": 5,
     "case_id": "240125-000595",
     "type": "CARTA_RESPUESTA",
-    "file_id": "1cac98af-bfc0-4d66-ba82-e3db13f2ec0f",
+    "file_id": "7508916f-a5fe-45ed-aeb6-2bf0964bf205",
     "original_name": "RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024",
     "file_path": "RPT_CNR_SEC_10_ref_240125-000595_nrocliente_558112-5_inc_2118647_27-01-2024.docx",
@@ -593,11 +774,11 @@
     }
   },
   {
-    "id": 30,
+    "id": 39,
     "caso_id": 6,
     "case_id": "240126-000132",
     "type": "CARTA_RESPUESTA",
-    "file_id": "1622d657-62cd-497d-a45b-3f6cac7d7249",
+    "file_id": "d21c0e45-cd1c-498c-a28d-52270f9da6e0",
     "original_name": "Caso SEC N° 2002210, cliente Nº 6643.pdf",
     "standardized_name": "Carta de Respuesta - Caso SEC N° 2002210, cliente Nº 6643",
     "file_path": "Caso SEC N° 2002210, cliente Nº 6643.pdf",
@@ -613,11 +794,11 @@
     }
   },
   {
-    "id": 31,
+    "id": 40,
     "caso_id": 7,
     "case_id": "240205-000393",
     "type": "CARTA_RESPUESTA",
-    "file_id": "aac14404-bbb9-467e-8dc4-5bb9f5e1e88a",
+    "file_id": "c11a3225-779b-4993-8730-5b191f2d35a5",
     "original_name": "Caso SEC N° 2006332 Rol 31866.pdf",
     "standardized_name": "Carta de Respuesta - Caso SEC N° 2006332 Rol 31866",
     "file_path": "Caso SEC N° 2006332 Rol 31866.pdf",
@@ -634,11 +815,11 @@
     }
   },
   {
-    "id": 32,
+    "id": 41,
     "caso_id": 7,
     "case_id": "240205-000393",
     "type": "CARTA_RESPUESTA",
-    "file_id": "3fcab2f0-fcc6-4ab6-9447-6b7e33307686",
+    "file_id": "8e4024c4-9bac-48f3-ad75-631ea3623d5e",
     "original_name": "RPT_CNR_SEC_14_ref_240205-000393_nrocliente_31866_inc_2125352_06-02-2024.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_14_ref_240205-000393_nrocliente_31866_inc_2125352_06-02-2024",
     "file_path": "RPT_CNR_SEC_14_ref_240205-000393_nrocliente_31866_inc_2125352_06-02-2024.docx",
@@ -656,11 +837,11 @@
     }
   },
   {
-    "id": 33,
+    "id": 42,
     "caso_id": 8,
     "case_id": "240320-000178",
     "type": "CARTA_RESPUESTA",
-    "file_id": "ff4a12e0-a7ea-42d5-be66-2aab75c75e6d",
+    "file_id": "611ce323-11ed-4816-b98b-19d56ba2afa6",
     "original_name": "RPT_CNR_SEC_18_ref_240320-000178_nrocliente_2743367_inc_2151784_21-03-2024.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_18_ref_240320-000178_nrocliente_2743367_inc_2151784_21-03-2024",
     "file_path": "RPT_CNR_SEC_18_ref_240320-000178_nrocliente_2743367_inc_2151784_21-03-2024.docx",
@@ -678,11 +859,11 @@
     }
   },
   {
-    "id": 34,
+    "id": 43,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "f9ae4cee-6c74-467a-b877-3d1cd1e2d893",
+    "file_id": "beb335b6-ecd5-450c-87dd-f2a3b5c3cd68",
     "original_name": "2028414-SI.pdf",
     "standardized_name": "Carta de Respuesta - 2028414-SI",
     "file_path": "2028414-SI.pdf",
@@ -699,11 +880,11 @@
     }
   },
   {
-    "id": 35,
+    "id": 44,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "386e1cb7-ff5c-4816-8781-23743bb72a4f",
+    "file_id": "8c299161-0346-41fb-b9bf-7b28e2f09ce3",
     "original_name": "RPT_CNR_SEC_10_ref_240322-000010_nrocliente_1401620-1_inc_2153195_22-03-2024.docx",
     "standardized_name": "Carta de Respuesta - RPT_CNR_SEC_10_ref_240322-000010_nrocliente_1401620-1_inc_2153195_22-03-2024",
     "file_path": "RPT_CNR_SEC_10_ref_240322-000010_nrocliente_1401620-1_inc_2153195_22-03-2024.docx",
@@ -721,11 +902,11 @@
     }
   },
   {
-    "id": 36,
+    "id": 45,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "54f606da-c57c-4060-aff5-bb195b21db83",
+    "file_id": "97111e89-eb05-4960-b603-242db6ddf22a",
     "original_name": "2028414_calculo_2023_11618.pdf",
     "standardized_name": "Carta de Respuesta - 2028414_calculo_2023_11618",
     "file_path": null,
@@ -742,11 +923,11 @@
     }
   },
   {
-    "id": 37,
+    "id": 46,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "7593a164-a951-4b62-bb14-d77df464aeba",
+    "file_id": "319f0eb9-4314-4b1a-9aaa-371bba49c9fa",
     "original_name": "2028414_CEM.pdf",
     "standardized_name": "Carta de Respuesta - 2028414_CEM",
     "file_path": null,
@@ -763,11 +944,11 @@
     }
   },
   {
-    "id": 38,
+    "id": 47,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "CARTA_RESPUESTA",
-    "file_id": "d5b334d1-d78e-4437-bfd3-a3c90e145b6f",
+    "file_id": "b89fa23a-09ae-4969-b14b-626ede810470",
     "original_name": "2028414_reclamo formal.pdf",
     "standardized_name": "Carta de Respuesta - 2028414_reclamo formal",
     "file_path": null,
@@ -784,11 +965,87 @@
     }
   },
   {
-    "id": 39,
+    "id": 48,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "66df2d88-8f38-48bb-9586-f1f4554a7078",
+    "file_id": "dedb8f4f-f91f-4d57-af1e-0e79366cc737",
+    "original_name": "2028414_Cam_2023_11618.pdf",
+    "standardized_name": "Evidencia Fotográfica - 2028414_Cam_2023_11618",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2028414_Cam_2023_11618.pdf",
+      "file_size": 1353640,
+      "num_pages": 1,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 49,
+    "caso_id": 9,
+    "case_id": "240322-000010",
+    "type": "OTROS",
+    "file_id": "a4cce2cd-357b-411b-9633-736c61b49ccb",
+    "original_name": "2028414_Carta 578714849.pdf",
+    "standardized_name": "Documento - 2028414_Carta 578714849",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2028414_Carta 578714849.pdf",
+      "file_size": 78877,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 50,
+    "caso_id": 9,
+    "case_id": "240322-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "5f8c7d77-9fbc-47a2-885c-012c94834dc5",
+    "original_name": "2028414_Fotografias_2023_11618.pdf",
+    "standardized_name": "Evidencia Fotográfica - 2028414_Fotografias_2023_11618",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2028414_Fotografias_2023_11618.pdf",
+      "file_size": 813998,
+      "num_pages": 8,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 51,
+    "caso_id": 9,
+    "case_id": "240322-000010",
+    "type": "GRAFICO_CONSUMO",
+    "file_id": "8134e896-3a0b-4efa-83f1-1cf95f189b03",
+    "original_name": "2028414_historico consumos.pdf",
+    "standardized_name": "Gráfico de Consumo - 2028414_historico consumos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2028414_historico consumos.pdf",
+      "file_size": 29926,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 52,
+    "caso_id": 9,
+    "case_id": "240322-000010",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "dedb8f4f-f91f-4d57-af1e-0e79366cc737",
     "original_name": "2028414_Cam_2023_11618.pdf",
     "standardized_name": "Evidencia Fotográfica - 2028414_Cam_2023_11618",
     "file_path": null,
@@ -805,11 +1062,11 @@
     }
   },
   {
-    "id": 40,
+    "id": 53,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "OTROS",
-    "file_id": "0c6c19a4-e1d2-4e5e-8be2-96c110bd66cd",
+    "file_id": "a4cce2cd-357b-411b-9633-736c61b49ccb",
     "original_name": "2028414_Carta 578714849.pdf",
     "standardized_name": "Documento - 2028414_Carta 578714849",
     "file_path": null,
@@ -822,11 +1079,11 @@
     }
   },
   {
-    "id": 41,
+    "id": 54,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "EVIDENCIA_FOTOGRAFICA",
-    "file_id": "564bddff-380e-4d4b-89f7-4a27dd1119e5",
+    "file_id": "5f8c7d77-9fbc-47a2-885c-012c94834dc5",
     "original_name": "2028414_Fotografias_2023_11618.pdf",
     "standardized_name": "Evidencia Fotográfica - 2028414_Fotografias_2023_11618",
     "file_path": null,
@@ -843,11 +1100,11 @@
     }
   },
   {
-    "id": 42,
+    "id": 55,
     "caso_id": 9,
     "case_id": "240322-000010",
     "type": "GRAFICO_CONSUMO",
-    "file_id": "e7b1401b-a26b-4ecc-9a15-f25be9a94282",
+    "file_id": "8134e896-3a0b-4efa-83f1-1cf95f189b03",
     "original_name": "2028414_historico consumos.pdf",
     "standardized_name": "Gráfico de Consumo - 2028414_historico consumos",
     "file_path": null,
@@ -860,11 +1117,11 @@
     }
   },
   {
-    "id": 43,
+    "id": 56,
     "caso_id": 10,
     "case_id": "240327-000180",
     "type": "CARTA_RESPUESTA",
-    "file_id": "03587c64-788f-44d2-82ca-b8dc900a32df",
+    "file_id": "e24f0650-da44-48b8-a3f1-2cc1994350ba",
     "original_name": "LP-705_Caso_SEC N° 2030739.pdf",
     "standardized_name": "Carta de Respuesta - LP-705_Caso_SEC N° 2030739",
     "file_path": "LP-705_Caso_SEC N° 2030739.pdf",
@@ -881,16 +1138,1140 @@
     }
   },
   {
-    "file_id": "c30c120f-3eb0-4e9e-8692-7f4a69617f7c",
-    "case_id": "240322-000010",
-    "original_name": "Resolucion_240322-000010_20251125_013855.pdf",
-    "standardized_name": "Resolución Final - 240322-000010",
-    "type": "RESOLUCION_FINAL",
-    "relative_path": "240322-000010/resoluciones/Resolucion_240322-000010_20251125_013855.pdf",
-    "file_path": "resoluciones/Resolucion_240322-000010_20251125_013855.pdf",
+    "id": 57,
+    "caso_id": 11,
+    "case_id": "240327-000204",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "0b77f18d-6273-4ca4-b112-defc0d8908e1",
+    "original_name": "LP-706_Caso_SEC N° 2030757.pdf",
+    "standardized_name": "Carta de Respuesta - LP-706_Caso_SEC N° 2030757",
+    "file_path": "LP-706_Caso_SEC N° 2030757.pdf",
+    "relative_path": "240327-000204/LP-706_Caso_SEC N° 2030757.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "31/08/2022",
+      "decision": "PENDING"
+    },
     "metadata": {
-      "fecha_generacion": "2025-11-25T04:39:06.660Z",
-      "tipo": "RESOLUCION_FINAL"
+      "file_name": "LP-706_Caso_SEC N° 2030757.pdf",
+      "file_size": 1828422,
+      "num_pages": 9
+    }
+  },
+  {
+    "id": 58,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "1b3cfde5-6ca1-4186-b227-82e8231245b5",
+    "original_name": "2041864-SI.pdf",
+    "standardized_name": "Carta de Respuesta - 2041864-SI",
+    "file_path": "2041864-SI.pdf",
+    "relative_path": "240422-000856/2041864-SI.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "2041864-SI.pdf",
+      "file_size": 32888,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 59,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "b4100dcd-00ce-4b2d-96c4-b73b0b0e96d7",
+    "original_name": "2041864-Calculo_2023_14063.pdf",
+    "standardized_name": "Carta de Respuesta - 2041864-Calculo_2023_14063",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "29/09/2023",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "2041864-Calculo_2023_14063.pdf",
+      "file_size": 19276,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 60,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "OTROS",
+    "file_id": "5c868d63-b1d9-4b70-be9f-ba41f54ac6b7",
+    "original_name": "2041864-593397071.pdf",
+    "standardized_name": "Documento - 2041864-593397071",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2041864-593397071.pdf",
+      "file_size": 50350,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 61,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "a2f35796-2390-4d91-bb76-ba0beceb1cb1",
+    "original_name": "2041864-Cam_2023_14063.pdf",
+    "standardized_name": "Evidencia Fotográfica - 2041864-Cam_2023_14063",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2041864-Cam_2023_14063.pdf",
+      "file_size": 1354748,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 62,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "GRAFICO_CONSUMO",
+    "file_id": "302b9972-b4e9-4a32-81ca-56279956dffd",
+    "original_name": "2041864-CONSUMOS.pdf",
+    "standardized_name": "Gráfico de Consumo - 2041864-CONSUMOS",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2041864-CONSUMOS.pdf",
+      "file_size": 63794,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 63,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "68b722a0-133e-4d95-b197-602cd1e815ab",
+    "original_name": "2041864-Fotografias_2023_14063.pdf",
+    "standardized_name": "Evidencia Fotográfica - 2041864-Fotografias_2023_14063",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2041864-Fotografias_2023_14063.pdf",
+      "file_size": 838763,
+      "num_pages": 10,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 64,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "OTROS",
+    "file_id": "5c868d63-b1d9-4b70-be9f-ba41f54ac6b7",
+    "original_name": "2041864-593397071.pdf",
+    "standardized_name": "Documento - 2041864-593397071",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "2041864-593397071.pdf",
+      "file_size": 50350,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 65,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "a2f35796-2390-4d91-bb76-ba0beceb1cb1",
+    "original_name": "2041864-Cam_2023_14063.pdf",
+    "standardized_name": "Evidencia Fotográfica - 2041864-Cam_2023_14063",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "2041864-Cam_2023_14063.pdf",
+      "file_size": 1354748,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 66,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "GRAFICO_CONSUMO",
+    "file_id": "302b9972-b4e9-4a32-81ca-56279956dffd",
+    "original_name": "2041864-CONSUMOS.pdf",
+    "standardized_name": "Gráfico de Consumo - 2041864-CONSUMOS",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "2041864-CONSUMOS.pdf",
+      "file_size": 63794,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 67,
+    "caso_id": 12,
+    "case_id": "240422-000856",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "68b722a0-133e-4d95-b197-602cd1e815ab",
+    "original_name": "2041864-Fotografias_2023_14063.pdf",
+    "standardized_name": "Evidencia Fotográfica - 2041864-Fotografias_2023_14063",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "2041864-Fotografias_2023_14063.pdf",
+      "file_size": 838763,
+      "num_pages": 10,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 68,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "7ab635d1-9b59-4ac2-8e76-90620bdf0086",
+    "original_name": "Caso SEC N° 2051931, cliente Nº 2122.pdf",
+    "standardized_name": "Carta de Respuesta - Caso SEC N° 2051931, cliente Nº 2122",
+    "file_path": "Caso SEC N° 2051931, cliente Nº 2122.pdf",
+    "relative_path": "240514-000486/Caso SEC N° 2051931, cliente Nº 2122.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "09/02/2024",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Caso SEC N° 2051931, cliente Nº 2122.pdf",
+      "file_size": 161724,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 69,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "TABLA_CALCULO",
+    "file_id": "3ab85d96-3cab-4243-b172-3674c395a54a",
+    "original_name": "Calculo.pdf",
+    "standardized_name": "Tabla de Cálculo - Calculo",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Calculo.pdf",
+      "file_size": 544649,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 70,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "196ebee6-54ac-45a0-9ed9-63400078896e",
+    "original_name": "Carta Reclamo N° 14178235.pdf",
+    "standardized_name": "Carta de Respuesta - Carta Reclamo N° 14178235",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "09/02/2024",
+      "decision": "ACCEPTED"
+    },
+    "metadata": {
+      "file_name": "Carta Reclamo N° 14178235.pdf",
+      "file_size": 727622,
+      "num_pages": 4
+    }
+  },
+  {
+    "id": 71,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "6720817b-6845-4e65-b2c1-9f68543b03eb",
+    "original_name": "Fotos.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Fotos.pdf",
+      "file_size": 188262,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 72,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "OTROS",
+    "file_id": "7fd1b72b-3178-4423-815f-5eaa1f751920",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 268262,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 73,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "6720817b-6845-4e65-b2c1-9f68543b03eb",
+    "original_name": "Fotos.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "Fotos.pdf",
+      "file_size": 188262,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 74,
+    "caso_id": 13,
+    "case_id": "240514-000486",
+    "type": "OTROS",
+    "file_id": "7fd1b72b-3178-4423-815f-5eaa1f751920",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 268262,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 75,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "47303550-8171-4104-952f-46926f680255",
+    "original_name": "Caso SEC N° 2055405, cliente Nº 9094.pdf",
+    "standardized_name": "Carta de Respuesta - Caso SEC N° 2055405, cliente Nº 9094",
+    "file_path": "Caso SEC N° 2055405, cliente Nº 9094.pdf",
+    "relative_path": "240522-001843/Caso SEC N° 2055405, cliente Nº 9094.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "19/02/2024",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Caso SEC N° 2055405, cliente Nº 9094.pdf",
+      "file_size": 264458,
+      "num_pages": 3
+    }
+  },
+  {
+    "id": 76,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "TABLA_CALCULO",
+    "file_id": "7be648bf-dbdc-4ba8-9386-680cdc21ab18",
+    "original_name": "Calculo.pdf",
+    "standardized_name": "Tabla de Cálculo - Calculo",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Calculo.pdf",
+      "file_size": 483747,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 77,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "OTROS",
+    "file_id": "8d5900aa-3aa4-4080-83af-248c1d5338e9",
+    "original_name": "Carta Reclamo N° 14232195.pdf",
+    "standardized_name": "Documento - Carta Reclamo N° 14232195",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Carta Reclamo N° 14232195.pdf",
+      "file_size": 472011,
+      "num_pages": 3
+    }
+  },
+  {
+    "id": 78,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "02bbe089-4dbf-41e9-bec0-1aee4229fab0",
+    "original_name": "Fotos.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Fotos.pdf",
+      "file_size": 150223,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 79,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "OTROS",
+    "file_id": "94e6ca8b-928e-43d4-a9a4-9de56e6b89f4",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 250882,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 80,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "OTROS",
+    "file_id": "8d5900aa-3aa4-4080-83af-248c1d5338e9",
+    "original_name": "Carta Reclamo N° 14232195.pdf",
+    "standardized_name": "Documento - Carta Reclamo N° 14232195",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "Carta Reclamo N° 14232195.pdf",
+      "file_size": 472011,
+      "num_pages": 3
+    }
+  },
+  {
+    "id": 81,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "02bbe089-4dbf-41e9-bec0-1aee4229fab0",
+    "original_name": "Fotos.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "Fotos.pdf",
+      "file_size": 150223,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 82,
+    "caso_id": 14,
+    "case_id": "240522-001843",
+    "type": "OTROS",
+    "file_id": "94e6ca8b-928e-43d4-a9a4-9de56e6b89f4",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 250882,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 83,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "14f836ba-8efa-4ff6-92cf-d9900e68bd1d",
+    "original_name": "Caso SEC N° 2057976, Cliente N° 9338.pdf",
+    "standardized_name": "Carta de Respuesta - Caso SEC N° 2057976, Cliente N° 9338",
+    "file_path": "Caso SEC N° 2057976, Cliente N° 9338.pdf",
+    "relative_path": "240528-000304/Caso SEC N° 2057976, Cliente N° 9338.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "24/01/2024",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Caso SEC N° 2057976, Cliente N° 9338.pdf",
+      "file_size": 198979,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 84,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "f1b68a4a-a95f-4fbb-89ca-c2ea2b27f613",
+    "original_name": "CALCULO CNR.pdf",
+    "standardized_name": "Carta de Respuesta - CALCULO CNR",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "24-01-2024",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "CALCULO CNR.pdf",
+      "file_size": 350804,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 85,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "aba8f1f7-815a-4402-bca0-05ee3b7cfd99",
+    "original_name": "CRR ANTERIOR.pdf",
+    "standardized_name": "Carta de Respuesta - CRR ANTERIOR",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "24/01/2024",
+      "decision": "ACCEPTED"
+    },
+    "metadata": {
+      "file_name": "CRR ANTERIOR.pdf",
+      "file_size": 597741,
+      "num_pages": 4
+    }
+  },
+  {
+    "id": 86,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "3c20c583-3bb7-422e-91ff-bd5e66b99b39",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Carta de Respuesta - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "23/11/2023",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 139620,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 87,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "a96f7ba9-dbd8-483a-96f1-e91c327c23db",
+    "original_name": "1.jpg",
+    "standardized_name": "Evidencia Fotográfica - 1",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "1.jpg",
+      "file_size": 285053,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 88,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "222326dc-8454-41ef-a229-301536c06ec6",
+    "original_name": "2.jpg",
+    "standardized_name": "Evidencia Fotográfica - 2",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "2.jpg",
+      "file_size": 192716,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 89,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "507a9de5-eb91-450e-8dc2-e118adb46f5c",
+    "original_name": "3.jpg",
+    "standardized_name": "Evidencia Fotográfica - 3",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "3.jpg",
+      "file_size": 282275,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 90,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "93441e72-770b-4f08-881b-6aa4f1ecb56e",
+    "original_name": "4.jpg",
+    "standardized_name": "Evidencia Fotográfica - 4",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "4.jpg",
+      "file_size": 213406,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 91,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "6bf9fcf9-b174-46e8-8137-1b3771868b60",
+    "original_name": "5.jpg",
+    "standardized_name": "Evidencia Fotográfica - 5",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "5.jpg",
+      "file_size": 194369,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 92,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "785ee58d-c8e2-4179-bed9-937ee2c0e853",
+    "original_name": "6.jpg",
+    "standardized_name": "Evidencia Fotográfica - 6",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "6.jpg",
+      "file_size": 177635,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 93,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "a96f7ba9-dbd8-483a-96f1-e91c327c23db",
+    "original_name": "1.jpg",
+    "standardized_name": "Evidencia Fotográfica - 1",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "1.jpg",
+      "file_size": 285053,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 94,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "222326dc-8454-41ef-a229-301536c06ec6",
+    "original_name": "2.jpg",
+    "standardized_name": "Evidencia Fotográfica - 2",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "2.jpg",
+      "file_size": 192716,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 95,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "507a9de5-eb91-450e-8dc2-e118adb46f5c",
+    "original_name": "3.jpg",
+    "standardized_name": "Evidencia Fotográfica - 3",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "3.jpg",
+      "file_size": 282275,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 96,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "93441e72-770b-4f08-881b-6aa4f1ecb56e",
+    "original_name": "4.jpg",
+    "standardized_name": "Evidencia Fotográfica - 4",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "4.jpg",
+      "file_size": 213406,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 97,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "6bf9fcf9-b174-46e8-8137-1b3771868b60",
+    "original_name": "5.jpg",
+    "standardized_name": "Evidencia Fotográfica - 5",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "5.jpg",
+      "file_size": 194369,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 98,
+    "caso_id": 15,
+    "case_id": "240528-000304",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "785ee58d-c8e2-4179-bed9-937ee2c0e853",
+    "original_name": "6.jpg",
+    "standardized_name": "Evidencia Fotográfica - 6",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "6.jpg",
+      "file_size": 177635,
+      "type": "image",
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 99,
+    "caso_id": 17,
+    "case_id": "240823-000402",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "f15e1452-acb6-4ebf-afc5-96b68384b602",
+    "original_name": "Responde Caso SEC N°2110624, Cliente.pdf",
+    "standardized_name": "Carta de Respuesta - Responde Caso SEC N°2110624, Cliente",
+    "file_path": "Responde Caso SEC N°2110624, Cliente.pdf",
+    "relative_path": "240823-000402/Responde Caso SEC N°2110624, Cliente.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "09/12/2023",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Responde Caso SEC N°2110624, Cliente.pdf",
+      "file_size": 183946,
+      "num_pages": 3
+    }
+  },
+  {
+    "id": 100,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "24bc9b2c-b640-4d9b-b1d6-1f794f9a29a1",
+    "original_name": "Ref. Caso SEC N° 2126542, Cliente N°.pdf",
+    "standardized_name": "Carta de Respuesta - Ref. Caso SEC N° 2126542, Cliente N°",
+    "file_path": "Ref. Caso SEC N° 2126542, Cliente N°.pdf",
+    "relative_path": "240926-000479/Ref. Caso SEC N° 2126542, Cliente N°.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "13/09/2023",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Ref. Caso SEC N° 2126542, Cliente N°.pdf",
+      "file_size": 334731,
+      "num_pages": 3
+    }
+  },
+  {
+    "id": 101,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "TABLA_CALCULO",
+    "file_id": "c288df79-5fe6-4e4b-9fa1-6682a0f39423",
+    "original_name": "Calculo CNR.pdf",
+    "standardized_name": "Tabla de Cálculo - Calculo CNR",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Calculo CNR.pdf",
+      "file_size": 402507,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 102,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "cea0cd70-bff4-4805-ace3-93b657b4e019",
+    "original_name": "Ref. Caso SEC N° 2126542, Cliente N° 2287867.pdf",
+    "standardized_name": "Carta de Respuesta - Ref. Caso SEC N° 2126542, Cliente N° 2287867",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "13/09/2023",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Ref. Caso SEC N° 2126542, Cliente N° 2287867.pdf",
+      "file_size": 334731,
+      "num_pages": 3
+    }
+  },
+  {
+    "id": 103,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "bdeaa045-bd1f-4976-8ce9-338cbf85beb4",
+    "original_name": "Fotografia.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotografia",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Fotografia.pdf",
+      "file_size": 689977,
+      "num_pages": 8,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 104,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "OTROS",
+    "file_id": "5e561898-1181-4d37-9b9f-c0e6457c940f",
+    "original_name": "Olca.pdf",
+    "standardized_name": "Documento - Olca",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Olca.pdf",
+      "file_size": 520928,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 105,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "OTROS",
+    "file_id": "bca083ef-3ef8-4b4d-bd9d-027bae61d7df",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 248679,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 106,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "bdeaa045-bd1f-4976-8ce9-338cbf85beb4",
+    "original_name": "Fotografia.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotografia",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "Fotografia.pdf",
+      "file_size": 689977,
+      "num_pages": 8,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 107,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "OTROS",
+    "file_id": "5e561898-1181-4d37-9b9f-c0e6457c940f",
+    "original_name": "Olca.pdf",
+    "standardized_name": "Documento - Olca",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "Olca.pdf",
+      "file_size": 520928,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 108,
+    "caso_id": 18,
+    "case_id": "240926-000479",
+    "type": "OTROS",
+    "file_id": "bca083ef-3ef8-4b4d-bd9d-027bae61d7df",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 248679,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 109,
+    "caso_id": 19,
+    "case_id": "241011-000274",
+    "type": "CARTA_RESPUESTA",
+    "file_id": "024c1cef-c1c8-4e1d-9f27-58481e5b257d",
+    "original_name": "Caso SEC N° 2133797, cliente Nº 5652.pdf",
+    "standardized_name": "Carta de Respuesta - Caso SEC N° 2133797, cliente Nº 5652",
+    "file_path": "Caso SEC N° 2133797, cliente Nº 5652.pdf",
+    "relative_path": "241011-000274/Caso SEC N° 2133797, cliente Nº 5652.pdf",
+    "level": "level_1_critical",
+    "extracted_data": {
+      "response_date": "24/07/2024",
+      "decision": "PENDING"
+    },
+    "metadata": {
+      "file_name": "Caso SEC N° 2133797, cliente Nº 5652.pdf",
+      "file_size": 240171,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 110,
+    "caso_id": 19,
+    "case_id": "241011-000274",
+    "type": "TABLA_CALCULO",
+    "file_id": "54e92041-19f5-46aa-a22e-161930633cd7",
+    "original_name": "Calculo.pdf",
+    "standardized_name": "Tabla de Cálculo - Calculo",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Calculo.pdf",
+      "file_size": 439646,
+      "num_pages": 1
+    }
+  },
+  {
+    "id": 111,
+    "caso_id": 19,
+    "case_id": "241011-000274",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "6d1846ca-019c-404a-90dd-781ab362501b",
+    "original_name": "Fotos.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "Fotos.pdf",
+      "file_size": 473870,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 112,
+    "caso_id": 19,
+    "case_id": "241011-000274",
+    "type": "OTROS",
+    "file_id": "25cdb415-ce05-459a-a26a-b1835527e6cd",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_1_critical",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 231891,
+      "num_pages": 2
+    }
+  },
+  {
+    "id": 113,
+    "caso_id": 19,
+    "case_id": "241011-000274",
+    "type": "EVIDENCIA_FOTOGRAFICA",
+    "file_id": "6d1846ca-019c-404a-90dd-781ab362501b",
+    "original_name": "Fotos.pdf",
+    "standardized_name": "Evidencia Fotográfica - Fotos",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "Fotos.pdf",
+      "file_size": 473870,
+      "num_pages": 2,
+      "quantity": 1,
+      "tags": [
+        "general"
+      ]
+    }
+  },
+  {
+    "id": 114,
+    "caso_id": 19,
+    "case_id": "241011-000274",
+    "type": "OTROS",
+    "file_id": "25cdb415-ce05-459a-a26a-b1835527e6cd",
+    "original_name": "RIM.pdf",
+    "standardized_name": "Documento - RIM",
+    "file_path": null,
+    "relative_path": null,
+    "level": "level_2_supporting",
+    "metadata": {
+      "file_name": "RIM.pdf",
+      "file_size": 231891,
+      "num_pages": 2
     }
   }
 ]

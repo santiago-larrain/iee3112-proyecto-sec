@@ -1,10 +1,10 @@
 [
   {
     "id": 1,
-    "nis": "2642280",
+    "nis": "7823459",
     "comuna": "Desconocida",
     "direccion": null,
-    "numero_cliente": "2642280"
+    "numero_cliente": "7823459"
   },
   {
     "id": 2,
@@ -15,10 +15,10 @@
   },
   {
     "id": 3,
-    "nis": "197803311",
+    "nis": "608749",
     "comuna": "Santiago",
     "direccion": "Pasaje Kolla S/N 13 1833 de corroborar el consumo energético eléctrico del cliente en estudio.",
-    "numero_cliente": "197803311"
+    "numero_cliente": "608749"
   },
   {
     "id": 4,
@@ -43,10 +43,10 @@
   },
   {
     "id": 7,
-    "nis": "240205",
+    "nis": "2006332",
     "comuna": "Puente Alto",
     "direccion": "calle del reclamo que es: LOS INGLESES ORIENTE de la comuna Puente Alto",
-    "numero_cliente": "240205"
+    "numero_cliente": "2006332"
   },
   {
     "id": 8,
@@ -68,5 +68,75 @@
     "comuna": "Desconocida",
     "direccion": null,
     "numero_cliente": "2030739"
+  },
+  {
+    "id": 11,
+    "nis": "2030757",
+    "comuna": "Desconocida",
+    "direccion": null,
+    "numero_cliente": "2030757"
+  },
+  {
+    "id": 12,
+    "nis": "2041864",
+    "comuna": "Santiago",
+    "direccion": "calle completa - conectado directo por",
+    "numero_cliente": "2041864"
+  },
+  {
+    "id": 13,
+    "nis": "2122",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O`Higgins Nº1465",
+    "numero_cliente": "2122"
+  },
+  {
+    "id": 14,
+    "nis": "9094",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O`Higgins Nº1465",
+    "numero_cliente": "9094"
+  },
+  {
+    "id": 15,
+    "nis": "9338",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O`Higgins Nº1465",
+    "numero_cliente": "9338"
+  },
+  {
+    "id": 16,
+    "nis": "NIS-240710-001264",
+    "comuna": "Desconocida",
+    "direccion": null,
+    "numero_cliente": "NIS-240710-001264"
+  },
+  {
+    "id": 17,
+    "nis": "2110624",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O’Higgins Nº1465",
+    "numero_cliente": "2110624"
+  },
+  {
+    "id": 18,
+    "nis": "2126542",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O’Higgins Nº1465",
+    "numero_cliente": "2126542"
+  },
+  {
+    "id": 19,
+    "nis": "5652",
+    "comuna": "San Bernardo",
+    "direccion": "Av. Libertador Bernardo O`Higgins Nº1465",
+    "numero_cliente": "5652"
+  },
+  {
+    "id": 20,
+    "nis": "NIS-241212-000245",
+    "comuna": "Desconocida",
+    "direccion": null,
+    "numero_cliente": "NIS-241212-000245"
   }
 ]
