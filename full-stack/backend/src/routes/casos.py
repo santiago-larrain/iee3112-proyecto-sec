@@ -936,20 +936,122 @@ def update_checklist_item(case_id: str, item_id: str, update: ChecklistItemUpdat
     checklist = caso_encontrado.get("checklist", {})
     item_encontrado = None
     
+    # Si el checklist está vacío o no existe, intentar obtenerlo desde el EDN o generarlo
+    checklist_has_items = False
+    if checklist and isinstance(checklist, dict):
+        # Verificar si tiene items en alguno de los grupos
+        for cat in ["group_a_admisibilidad", "group_b_instruccion", "group_c_analisis"]:
+            items = checklist.get(cat, [])
+            if isinstance(items, list) and len(items) > 0:
+                checklist_has_items = True
+                break
+    
+    if not checklist_has_items:
+        # Obtener EDN para usar su checklist
+        edn_actualizado = db_manager.get_caso_by_case_id(case_id)
+        if edn_actualizado and edn_actualizado.get("checklist"):
+            checklist = edn_actualizado.get("checklist")
+            caso_encontrado["checklist"] = checklist
+            # Verificar nuevamente si tiene items
+            checklist_has_items = any(
+                isinstance(checklist.get(cat, []), list) and len(checklist.get(cat, [])) > 0
+                for cat in ["group_a_admisibilidad", "group_b_instruccion", "group_c_analisis"]
+            )
+        
+        # Si aún no hay checklist válido, generarlo automáticamente
+        if not checklist_has_items:
+            try:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Checklist no encontrado o vacío para {case_id}, generando uno nuevo.")
+                # ChecklistGenerator.generate_checklist() ya retorna un dict, no un objeto Pydantic
+                checklist = checklist_generator.generate_checklist(caso_encontrado)
+                
+                # Asegurar que es un dict y tiene la estructura correcta
+                if not isinstance(checklist, dict):
+                    logger.error(f"Checklist generado no es un dict: {type(checklist)}")
+                    raise ValueError("Checklist generado no es un diccionario")
+                
+                # Verificar que tiene los grupos necesarios
+                checklist_items_count = {
+                    cat: len(checklist.get(cat, [])) if isinstance(checklist.get(cat, []), list) else 0
+                    for cat in ["group_a_admisibilidad", "group_b_instruccion", "group_c_analisis"]
+                }
+                logger.info(f"Checklist generado para {case_id}: {checklist_items_count}")
+                
+                if not any(checklist.get(cat, []) for cat in ["group_a_admisibilidad", "group_b_instruccion", "group_c_analisis"]):
+                    logger.warning(f"Checklist generado está vacío para {case_id}")
+                
+                # Guardar en el caso - IMPORTANTE: asegurar que se guarda correctamente
+                caso_encontrado["checklist"] = checklist
+                logger.debug(f"Checklist guardado en caso_encontrado. Keys: {list(checklist.keys())}")
+                
+                # Guardar el checklist generado en el EDN
+                if not edn_actualizado:
+                    edn_actualizado = db_manager.get_caso_by_case_id(case_id)
+                if edn_actualizado:
+                    edn_actualizado["checklist"] = checklist
+                    # Remover campos que no pertenecen al EDN antes de guardar
+                    edn_limpio = {k: v for k, v in edn_actualizado.items() 
+                                 if k not in ['materia', 'monto_disputa', 'empresa', 'fecha_ingreso']}
+                    db_manager.update_edn(case_id, edn_limpio)
+                else:
+                    logger.warning(f"No se pudo obtener EDN para guardar checklist de {case_id}")
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Error generando checklist para {case_id}: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=f"Error generando checklist: {str(e)}")
+    
+    # IMPORTANTE: Asegurar que estamos usando el checklist actualizado del caso
+    # Si se generó un nuevo checklist, usar ese
+    checklist = caso_encontrado.get("checklist", checklist)
+    
     # Buscar en los grupos correctos (group_a_admisibilidad, group_b_instruccion, group_c_analisis)
     for category in ["group_a_admisibilidad", "group_b_instruccion", "group_c_analisis"]:
         items = checklist.get(category, [])
         if not isinstance(items, list):
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Category {category} no es una lista: {type(items)}")
             continue
         for idx, item in enumerate(items):
-            if isinstance(item, dict) and item.get("id") == item_id:
+            # Comparación más robusta: normalizar IDs (strip, case-insensitive)
+            if not isinstance(item, dict):
+                continue
+            item_id_normalized = str(item.get("id", "")).strip().lower()
+            search_id_normalized = str(item_id).strip().lower()
+            
+            if item_id_normalized == search_id_normalized:
                 items[idx]["validated"] = update.validated
                 item_encontrado = items[idx]
+                # Actualizar también en caso_encontrado para asegurar persistencia
+                if "checklist" not in caso_encontrado or not isinstance(caso_encontrado["checklist"], dict):
+                    caso_encontrado["checklist"] = checklist
+                else:
+                    caso_encontrado["checklist"][category] = items
                 break
         if item_encontrado:
             break
     
     if item_encontrado is None:
+        # Log para debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        available_ids = []
+        checklist_structure = {}
+        for category in ["group_a_admisibilidad", "group_b_instruccion", "group_c_analisis"]:
+            items = checklist.get(category, [])
+            checklist_structure[category] = len(items) if isinstance(items, list) else f"not a list: {type(items)}"
+            if isinstance(items, list):
+                for item in items:
+                    if isinstance(item, dict) and item.get("id"):
+                        available_ids.append(item.get("id"))
+                    elif isinstance(item, dict):
+                        logger.debug(f"Item sin ID en {category}: keys={list(item.keys())}")
+        logger.warning(f"Item {item_id} no encontrado. IDs disponibles: {available_ids}. Estructura: {checklist_structure}. Tipo checklist: {type(checklist)}")
+        if not available_ids:
+            logger.error(f"Checklist parece estar vacío o mal formado. Checklist keys: {list(checklist.keys()) if isinstance(checklist, dict) else 'not a dict'}")
         raise HTTPException(status_code=404, detail=f"Item {item_id} no encontrado en el checklist")
     
     # Guardar cambios en EDN
@@ -1536,13 +1638,8 @@ def _update_suministro_in_database(nis: str, comuna: str = None, direccion: str 
     except Exception as e:
         print(f"Error actualizando suministro: {e}")
 
-@router.get("/casos/{case_id}/documentos/{file_id}/preview")
-def preview_documento(case_id: str, file_id: str,
-                     request: Request,
-                     mode: Optional[str] = None,
-                     format: Optional[str] = None):
-    """Sirve el archivo del documento para vista previa. Para DOCX, convierte a PDF automáticamente."""
-    # Buscar documento en documentos.json primero (más confiable)
+def _find_documento(case_id: str, file_id: str, request: Request):
+    """Helper para buscar un documento en documentos.json o EDN"""
     documento_encontrado = None
     documentos_path = db_path / "documentos.json"
     
@@ -1568,66 +1665,151 @@ def preview_documento(case_id: str, file_id: str,
                 case_id_caso = caso.get("case_id")
             if case_id_caso == case_id:
                 doc_inventory = caso.get("document_inventory", {})
-                # Buscar en todas las categorías funcionales también
-                for category in ["reclamo_respuesta", "informe_evidencias", "historial_calculos", "otros", "level_1_critical", "level_2_supporting"]:
-                    for doc in doc_inventory.get(category, []):
-                        if doc.get("file_id") == file_id:
+                # Buscar en todas las categorías funcionales y niveles
+                categories_to_search = [
+                    "reclamo_respuesta", "informe_evidencias", "historial_calculos", "otros",
+                    "level_1_critical", "level_2_supporting", "level_0_missing"
+                ]
+                for category in categories_to_search:
+                    docs = doc_inventory.get(category, [])
+                    if not isinstance(docs, list):
+                        continue
+                    for doc in docs:
+                        if isinstance(doc, dict) and doc.get("file_id") == file_id:
                             documento_encontrado = doc
                             break
                     if documento_encontrado:
                         break
                 if documento_encontrado:
                     break
+        
+        # Si aún no se encuentra, buscar directamente en el EDN desde el db_manager
+        if not documento_encontrado:
+            try:
+                edn = db_manager.get_caso_by_case_id(case_id)
+                if edn:
+                    doc_inventory = edn.get("document_inventory", {})
+                    for category in ["reclamo_respuesta", "informe_evidencias", "historial_calculos", "otros", "level_1_critical", "level_2_supporting", "level_0_missing"]:
+                        docs = doc_inventory.get(category, [])
+                        if isinstance(docs, list):
+                            for doc in docs:
+                                if isinstance(doc, dict) and doc.get("file_id") == file_id:
+                                    documento_encontrado = doc
+                                    break
+                        if documento_encontrado:
+                            break
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.debug(f"Error buscando documento en EDN: {e}")
     
-    if not documento_encontrado:
-        raise HTTPException(status_code=404, detail=f"Documento {file_id} no encontrado")
-    
-    # Determinar ruta del archivo usando rutas relativas
+    return documento_encontrado
+
+def _get_file_path(documento_encontrado: dict, case_id: str):
+    """Helper para obtener la ruta del archivo físico con múltiples estrategias de búsqueda"""
     file_path = None
     
     # Prioridad 1: relative_path (ruta relativa desde FILES_DIR)
     if documento_encontrado.get("relative_path"):
         file_path = files_dir / documento_encontrado["relative_path"]
         if file_path.exists():
-            # Si es DOCX, convertir a PDF automáticamente
-            if file_path.suffix.lower() == '.docx':
-                from src.utils.docx_to_pdf import docx_to_pdf
-                pdf_path = docx_to_pdf(file_path)
-                if pdf_path and pdf_path.exists():
-                    return _serve_file(pdf_path, documento_encontrado.get("original_name", "documento.docx").replace('.docx', '.pdf'))
-                else:
-                    # Si falla la conversión, intentar HTML como fallback
-                    from src.utils.docx_to_html import docx_to_html
-                    html_content = docx_to_html(file_path)
-                    if html_content:
-                        from fastapi.responses import HTMLResponse
-                        return HTMLResponse(content=html_content)
-                    raise HTTPException(status_code=500, detail="No se pudo convertir DOCX a PDF ni HTML")
-            return _serve_file(file_path, documento_encontrado.get("original_name", "documento.pdf"))
+            return file_path
     
     # Prioridad 2: file_path relativo desde la carpeta del caso (compatibilidad con datos antiguos)
     if documento_encontrado.get("file_path"):
         case_dir = example_cases_dir / case_id
         file_path = case_dir / documento_encontrado["file_path"]
-        
         if file_path.exists():
-            # Si es DOCX, convertir a PDF automáticamente
-            if file_path.suffix.lower() == '.docx':
-                from src.utils.docx_to_pdf import docx_to_pdf
-                pdf_path = docx_to_pdf(file_path)
-                if pdf_path and pdf_path.exists():
-                    return _serve_file(pdf_path, documento_encontrado.get("original_name", "documento.docx").replace('.docx', '.pdf'))
-                else:
-                    # Si falla la conversión, intentar HTML como fallback
-                    from src.utils.docx_to_html import docx_to_html
-                    html_content = docx_to_html(file_path)
-                    if html_content:
-                        from fastapi.responses import HTMLResponse
-                        return HTMLResponse(content=html_content)
-                    raise HTTPException(status_code=500, detail="No se pudo convertir DOCX a PDF ni HTML")
-            return _serve_file(file_path, documento_encontrado.get("original_name", "documento.pdf"))
+            return file_path
     
-    raise HTTPException(status_code=404, detail=f"Archivo físico no encontrado para documento {file_id}")
+    # Prioridad 3: Buscar por original_name en la carpeta del caso
+    original_name = documento_encontrado.get("original_name")
+    if original_name:
+        case_dir = example_cases_dir / case_id
+        if case_dir.exists():
+            # Buscar directamente por nombre
+            file_path = case_dir / original_name
+            if file_path.exists():
+                return file_path
+            
+            # Buscar recursivamente en subdirectorios
+            for found_file in case_dir.rglob(original_name):
+                if found_file.is_file():
+                    return found_file
+    
+    # Prioridad 4: Buscar por file_id en la carpeta del caso (último recurso)
+    doc_file_id = documento_encontrado.get("file_id")
+    if doc_file_id:
+        case_dir = example_cases_dir / case_id
+        if case_dir.exists():
+            # Buscar archivos que contengan el file_id en el nombre
+            for found_file in case_dir.rglob("*"):
+                if found_file.is_file() and doc_file_id in found_file.name:
+                    return found_file
+    
+    return None
+
+@router.get("/casos/{case_id}/documentos/{file_id}/preview")
+@router.head("/casos/{case_id}/documentos/{file_id}/preview")
+def preview_documento(case_id: str, file_id: str,
+                     request: Request,
+                     mode: Optional[str] = None,
+                     format: Optional[str] = None):
+    """Sirve el archivo del documento para vista previa. Para DOCX, convierte a PDF automáticamente.
+    Soporta tanto GET como HEAD para verificación de existencia."""
+    documento_encontrado = _find_documento(case_id, file_id, request)
+    
+    if not documento_encontrado:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Documento {file_id} no encontrado en documentos.json ni EDN para caso {case_id}")
+        raise HTTPException(status_code=404, detail=f"Documento {file_id} no encontrado")
+    
+    file_path = _get_file_path(documento_encontrado, case_id)
+    
+    if not file_path:
+        import logging
+        logger = logging.getLogger(__name__)
+        relative_path = documento_encontrado.get("relative_path")
+        file_path_old = documento_encontrado.get("file_path")
+        original_name = documento_encontrado.get("original_name")
+        logger.warning(f"Archivo físico no encontrado para documento {file_id}. relative_path: {relative_path}, file_path: {file_path_old}, original_name: {original_name}")
+        
+        # Intentar una búsqueda más exhaustiva como último recurso
+        if original_name:
+            case_dir = example_cases_dir / case_id
+            if case_dir.exists():
+                # Buscar cualquier archivo con un nombre similar
+                all_files = list(case_dir.rglob("*"))
+                similar_files = [f for f in all_files if f.is_file() and original_name.lower() in f.name.lower()]
+                if similar_files:
+                    logger.info(f"Encontrado archivo similar: {similar_files[0]}")
+                    file_path = similar_files[0]
+        
+        if not file_path:
+            raise HTTPException(status_code=404, detail=f"Archivo físico no encontrado para documento {file_id}")
+    
+    # Si es HEAD, solo verificar existencia y retornar headers
+    if request.method == "HEAD":
+        from fastapi.responses import Response
+        return Response(status_code=200)
+    
+    # Si es DOCX, convertir a PDF automáticamente
+    if file_path.suffix.lower() == '.docx':
+        from src.utils.docx_to_pdf import docx_to_pdf
+        pdf_path = docx_to_pdf(file_path)
+        if pdf_path and pdf_path.exists():
+            return _serve_file(pdf_path, documento_encontrado.get("original_name", "documento.docx").replace('.docx', '.pdf'))
+        else:
+            # Si falla la conversión, intentar HTML como fallback
+            from src.utils.docx_to_html import docx_to_html
+            html_content = docx_to_html(file_path)
+            if html_content:
+                from fastapi.responses import HTMLResponse
+                return HTMLResponse(content=html_content)
+            raise HTTPException(status_code=500, detail="No se pudo convertir DOCX a PDF ni HTML")
+    
+    return _serve_file(file_path, documento_encontrado.get("original_name", "documento.pdf"))
 
 def _serve_file(file_path: Path, filename: str) -> FileResponse:
     """Helper para servir archivos con el MIME type correcto"""
