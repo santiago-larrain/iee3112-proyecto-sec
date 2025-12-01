@@ -132,7 +132,7 @@ graph TD
     B -->|Todo CUMPLE| D[Cargar master_improcedente.md]
     C --> E[Identificar Items NO_CUMPLE]
     E --> F[Cargar Snippets Correspondientes]
-    F --> G[Inyectar Snippets en {irregularidades}]
+    F --> G["Inyectar Snippets en {irregularidades}"]
     D --> H[Poblar Placeholders Comunes]
     G --> H
     H --> I[Resolución Completa]
